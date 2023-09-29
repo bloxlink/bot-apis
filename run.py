@@ -8,6 +8,10 @@ APPS = {
     "discord-gateway-relay": "python3.10 src/main.py"
 }
 
+# ANSI escape codes for colors
+GREEN_START = "\033[0;32m"
+COLOR_END = "\033[0m"
+
 processes = []
 
 
@@ -22,6 +26,7 @@ signal.signal(signal.SIGINT, terminate_processes)
 
 # Start all apps
 for app_name, app_run_command in APPS.items():
+    print(f"{GREEN_START}Starting {app_name}...{COLOR_END}")
     process = subprocess.Popen(
         f"cd src/apps/{app_name}; {app_run_command}",
         shell=True,

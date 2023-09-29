@@ -12,5 +12,5 @@ for app_name, app_run_command in APPS.items():
     process = subprocess.Popen(f"cd src/apps/{app_name}; {app_run_command}", shell=True)
     processes.append(process)
 
-for process in process:
+for process in processes:
     process.wait()

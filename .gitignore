@@ -159,3 +159,5 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 .DS_Store
+src/apps/discord-gateway-relay/src/config.py
+src/apps/bot-api/src/config.py

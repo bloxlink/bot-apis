@@ -1,21 +1,18 @@
 [tool.poetry]
-name = "bot-api"
+name = "discord-gateway-relay"
 version = "0.1.0"
 description = ""
 authors = ["Bloxlink <oss@blox.link>"]
-license = "AGPL 3.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-sanic = "22.6.1"
-aiohttp = "3.8.5"
-motor = "2.5.1"
-hiredis = "^2.2.3"
-redis = "~4.2"
-requests = "^2.31.0"
-websockets = "<11.0"
-pymongo = { version = "3.12", extras = ["srv"] }
+discord-py = {git = "https://github.com/Bloxlink-Labs/discord.py"}
+psutil = "5.9.0"
+python-dateutil = "2.8.2"
+redis = "4.6.0"
+hiredis = "2.2.3"
+async-timeout = "4.0.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
@@ -26,6 +23,7 @@ line_length = "110"
 
 [tool.isort]
 profile = "black"
+
 
 [build-system]
 requires = ["poetry-core"]

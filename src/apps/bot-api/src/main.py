@@ -44,9 +44,15 @@ def create_app() -> Sanic:
     return app
 
 
-if __name__ == "__main__":
-    asyncio.run(database.connect_database())
+async def main():
+    await database.connect_database()
 
+
+# Must be outside of __main__ check because otherwise the databases will not connect on the worker
+# subprocesses spawned by Sanic.
+asyncio.run(main())
+
+if __name__ == "__main__":
     loader = AppLoader(factory=partial(create_app))
 
     app = loader.load()

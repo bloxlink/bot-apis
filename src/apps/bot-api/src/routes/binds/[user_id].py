@@ -2,8 +2,9 @@ from sanic.response import json
 
 from resources.constants import DEFAULTS
 from resources.database import fetch_guild_data
+from resources.exceptions import UserNotVerified
 from resources.models import GuildData
-from resources.utils import find
+from resources.utils import find_role_in_guild_roles
 
 
 class Route:
@@ -12,6 +13,19 @@ class Route:
     NAME = "user_binds"
 
     def flatten_binds(self, role_binds: list) -> list:
+        """Take a list of binds (in JSON) and return only the bind-specific data.
+
+        This effectively strips out info such as roles being given & removed, and the nickname template.
+
+        If there is a "criteria" field in the bind data, it will append everything within the criteria
+        entry to the output list of binds.
+
+        Args:
+            role_binds (list): List of bindings to flatten (dict-represented)
+
+        Returns:
+            list: The flattened binds.
+        """
         all_binds: list = []
 
         for bind in role_binds:
@@ -23,6 +37,17 @@ class Route:
         return all_binds
 
     def has_custom_verified_roles(self, role_binds: list) -> tuple[bool, bool]:
+        """Determine if a guild has a set custom unverified & verified role.
+
+        I.e. a verified or unverified role that is set via a binding, rather than via the top level
+        unverifiedRole and verifiedRole database keys.
+
+        Args:
+            role_binds (list): The bindings in the guild (dict represented)
+
+        Returns:
+            tuple[bool, bool]: If the server has a custom (verified role, unverified role).
+        """
         has_verified_role: bool = False
         has_unverified_role: bool = False
 
@@ -36,7 +61,17 @@ class Route:
 
         return has_verified_role, has_unverified_role
 
-    async def get_default_verified_role(self, guild: dict) -> tuple[str, str]:
+    async def get_default_verified_role(self, guild: dict) -> tuple[dict, dict]:
+        """Get the non-custom unverified & verified roles in the given guild.
+
+        Args:
+            guild (dict): Guild data as a dict, needs an "id" and the "roles" list keys at a minimum.
+
+        Returns:
+            tuple[dict, dict]: The found (verified, unverified) roles.
+                Will be None if not found.
+                Keys for the found roles will be "id", "name", and "managed".
+        """
         guild_data: GuildData = await fetch_guild_data(
             guild["id"],
             "verifiedRoleEnabled",
@@ -67,82 +102,122 @@ class Route:
         return verified_role, unverified_role
 
     async def check_bind_for(
-        self, guild_roles: list[dict], roblox_account: dict, bind_type: str, bind_id: int, **bind_data
-    ):
+        self,
+        guild_roles: list[dict],
+        roblox_account: dict,
+        bind_type: str,
+        bind_id: int,
+        **bind_data,
+    ) -> tuple[bool, set, set, dict[str, list]]:
+        """Determine if a bind applies to a user or not.
+
+        Args:
+            guild_roles (list[dict]): The roles that are in the guild.
+            roblox_account (dict): The roblox account we are checking the criteria for.
+            bind_type (str): The type of bind being applied to the user.
+            bind_id (int): The ID of the entity that this bind is for.
+
+        Raises:
+            RuntimeError: This is an entire group bind & it succeeded, but the user is either not in the group
+                or is not verified.
+
+        Returns:
+            tuple[bool, set, set, dict[str, list]]: (Does this bind apply to the user, roles to give,
+                roles to remove, explanations why this bind could or could not be given)
+        """
         bind_roles: set = set()
         remove_roles: set = set()
 
         bind_explanations: dict[str, list] = {"success": [], "failure": []}
 
+        success_explanations = bind_explanations["success"]
+        failure_explanations = bind_explanations["failure"]
+
         success: bool = False
         entire_group_bind: bool = "roles" not in bind_data  # find a role matching their roleset
 
-        if bind_type == "group":
-            if roblox_account:
+        # TODO: Handle other bind types?
+        try:
+            if bind_type == "group":
+                if not roblox_account:
+                    raise UserNotVerified()
+
                 user_group: dict | None = roblox_account.get("groupsv2", {}).get(str(bind_id))
 
                 if user_group:
+                    user_rank = user_group["role"]["rank"]
+
                     if bind_data.get("roleset"):
                         bind_roleset = bind_data["roleset"]
 
-                        if bind_roleset < 0 and abs(bind_roleset) <= user_group["role"]["rank"]:
+                        # Negative binding, all people above (or eq to) this roleset.
+                        if bind_roleset < 0 and abs(bind_roleset) <= user_rank:
                             success = True
-                            bind_explanations["success"].append(
+                            success_explanations.append(
                                 f"Your rank is equal to or greater than {bind_roleset}."
                             )
                         else:
-                            bind_explanations["failure"].append(
-                                f"This bind requires your rank, {user_group['role']['rank']}, to be higher than {bind_roleset}."
+                            failure_explanations.append(
+                                f"This bind requires your rank, {user_rank}, to be higher than {bind_roleset}."
                             )
 
-                        if bind_roleset == user_group["role"]["rank"]:
+                        # Normal roleset binding.
+                        if bind_roleset == user_rank:
                             success = True
-                            bind_explanations["success"].append(f"Your rank is equal to {bind_roleset}.")
+                            success_explanations.append(f"Your rank is equal to {bind_roleset}.")
                         else:
-                            bind_explanations["failure"].append(
-                                f"This bind requires your rank, {user_group['role']['rank']}, to be equal to {bind_roleset}."
+                            failure_explanations.append(
+                                f"This bind requires your rank, {user_rank}, to be equal to {bind_roleset}."
                             )
 
                     elif bind_data.get("min") and bind_data.get("max"):
-                        if int(bind_data["min"]) <= user_group["role"]["rank"] <= int(bind_data["max"]):
+                        min_roleset = bind_data["min"]
+                        max_roleset = bind_data["max"]
+
+                        if int(min_roleset) <= user_rank <= int(max_roleset):
                             success = True
-                            bind_explanations["success"].append(
-                                f"Your rank is between {bind_data['min']} and {bind_data['max']}."
+                            success_explanations.append(
+                                f"Your rank is between {min_roleset} and {max_roleset}."
                             )
                         else:
-                            bind_explanations["failure"].append(
-                                f"This bind requires your rank to be between {bind_data['min']} and {bind_data['max']}; however, your rank is {user_group['role']['rank']}."
+                            failure_explanations.append(
+                                f"This bind requires your rank to be between {min_roleset} and "
+                                f"{max_roleset}; however, your rank is {user_rank}."
                             )
 
                     # elif bind_data.get("everyone"):
                     #     success = True
                     else:
                         success = True
-                        bind_explanations["success"].append(f"You are in this group.")
+                        success_explanations.append("You are in this group.")
 
                 else:
                     # check if guest bind (not in group)
                     if bind_data.get("guest"):
                         success = True
-                        bind_explanations["success"].append("You are not in this group.")
+                        success_explanations.append("You are not in this group.")
                     else:
-                        bind_explanations["failure"].append(
-                            f"This bind requires you to be in the group {bind_id}."
-                        )
+                        failure_explanations.append(f"This bind requires you to be in the group {bind_id}.")
 
-        elif bind_type in ("verified", "unverified"):
-            if bind_type == "verified" and roblox_account:
-                success = True
-            elif bind_type == "unverified" and not roblox_account:
-                success = True
+            elif bind_type in ("verified", "unverified"):
+                # Give custom unverified + verified roles.
+                if bind_type == "verified" and roblox_account:
+                    success = True
+                elif bind_type == "unverified" and not roblox_account:
+                    success = True
 
-            for bind_role_id in bind_data.get("roles", []):
-                role = find(lambda r: str(r.id) == bind_role_id, guild_roles)
-                if bind_role_id in find(lambda r: str(r.id) == bind_role_id, guild_roles):
-                    if bind_type == "verified" and roblox_account:
-                        bind_roles.add(bind_role_id)
-                    elif bind_type == "unverified" and not roblox_account:
-                        bind_roles.add(bind_role_id)
+                for bind_role_id in bind_data.get("roles", []):
+                    lookup = find_role_in_guild_roles(guild_roles, bind_role_id)
+
+                    # If the role was found, lookup is not empty.
+                    if list(lookup):
+                        if bind_type == "verified" and roblox_account:
+                            bind_roles.add(bind_role_id)
+                        elif bind_type == "unverified" and not roblox_account:
+                            bind_roles.add(bind_role_id)
+
+        except UserNotVerified:
+            pass
 
         if success:
             if entire_group_bind and not (roblox_account and user_group):
@@ -179,6 +254,31 @@ class Route:
         return success, bind_roles, remove_roles, bind_explanations
 
     async def handler(self, request, user_id):
+        """Handle the /binds/<user_id> endpoint.
+
+        Determines what binds should be given to a user, and if the unverified role or verified
+        role should be given to the user.
+
+        Returns a JSON (a dictionary) with the resulting binds to give.
+        {
+            "success": true/false,
+            "binds: {
+                "optional": [] (nested lists) # Optional bindings that apply to the user. Not implemented in the bot.
+                "required": [] (nested lists) # Required bindings that apply to the user.
+                    Each entry consists of [
+                        {bind db representation},
+                        [role IDs to give (str)],
+                        [roles IDs to remove (str)],
+                        the set nickname_template (str)
+                    ]
+                "explanations": {
+                    "success": []  # Reasons why a bind was given
+                    "failure": []  # Reasons why a bind was not given
+                    "criteria": [] # ?
+                }
+            }
+        }
+        """
         json_data: dict = request.json or {}
 
         guild: dict = json_data.get("guild")

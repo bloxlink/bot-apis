@@ -3,10 +3,12 @@ from os.path import exists
 from typing import Callable
 
 from motor.motor_asyncio import AsyncIOMotorClient
-from redis.asyncio import Redis as Redis
+from redis.asyncio import Redis
 
-from .models import GuildData, UserData
-from .secrets import (
+from resources.models import GuildData, UserData
+
+# pylint: disable=no-name-in-module
+from resources.secrets import (
     MONGO_CA_FILE,
     MONGO_URL,
     REDIS_HOST,

@@ -1,3 +1,4 @@
+import asyncio
 import importlib
 import logging
 import os
@@ -13,7 +14,7 @@ from middleware import auth
 logging.basicConfig()
 
 
-def register_routes(app, path=None):
+def register_routes(app: Sanic, path=None):
     path = path or ["src/routes"]
     files = os.listdir("/".join(path))
 
@@ -23,14 +24,17 @@ def register_routes(app, path=None):
                 register_routes(app, path + [f"{file_or_folder}"])
             else:
                 proper_path = "/".join(path) + "/" + file_or_folder
-                import_name = proper_path.replace(
-                    "/", ".").replace(".py", "").replace("src.", "")
+                import_name = proper_path.replace("/", ".").replace(".py", "").replace("src.", "")
 
                 route_module = importlib.import_module(import_name)
                 route = getattr(route_module, "Route")()
 
-                app.add_route(getattr(route, "handler"), getattr(
-                    route, "PATH"), getattr(route, "METHODS"))
+                app.add_route(
+                    getattr(route, "handler"),
+                    getattr(route, "PATH"),
+                    getattr(route, "METHODS"),
+                    name=getattr(route, "NAME", None),
+                )
 
 
 def create_app() -> Sanic:
@@ -40,13 +44,9 @@ def create_app() -> Sanic:
     return app
 
 
-async def main():
-    await database.connect_database()
-
-    register_routes()
-
-
 if __name__ == "__main__":
+    asyncio.run(database.connect_database())
+
     loader = AppLoader(factory=partial(create_app))
 
     app = loader.load()

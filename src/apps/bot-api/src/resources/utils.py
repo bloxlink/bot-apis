@@ -154,3 +154,15 @@ def find(predicate: Callable, iterable: Iterable):
     for v in iterable:
         if predicate(v):
             return v
+
+
+def find_role_in_guild_roles(roles: Iterable, role_id: str):
+    """Find a role by ID from an iterable of roles (in dict format.)
+
+    Looks for the matching "id" key to the given role_id.
+
+    Yields the matching role.
+    """
+    for x in roles:
+        if role_id == x.get("id"):
+            yield x

@@ -9,6 +9,7 @@ from resources.utils import find
 class Route:
     PATH = "/binds/<user_id>/"
     METHODS = ("POST",)
+    NAME = "user_binds"
 
     def flatten_binds(self, role_binds: list) -> list:
         all_binds: list = []

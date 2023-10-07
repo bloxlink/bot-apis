@@ -13,6 +13,7 @@ any_group_nickname = re.compile(r"\{group-rank-(.*?)\}")
 class Route:
     PATH = "/nickname/parse/"
     METHODS = ("GET",)
+    NAME = "user_nickname"
 
     async def handler(self, request):
         json_body = request.json or {}

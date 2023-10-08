@@ -8,6 +8,8 @@ from resources.utils import find_role_in_guild_roles
 
 
 class Route:
+    """Calculate what bindings apply to a user."""
+
     PATH = "/binds/<user_id>/"
     METHODS = ("POST",)
     NAME = "user_binds"

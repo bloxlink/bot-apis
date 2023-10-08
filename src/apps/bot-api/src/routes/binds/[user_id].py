@@ -145,6 +145,8 @@ class Route:
                 user_group: dict | None = roblox_account.get("groupsv2", {}).get(str(bind_id))
 
                 if user_group:
+                    # TODO: Handle entire group bindings.
+
                     user_rank = user_group["role"]["rank"]
 
                     if bind_data.get("roleset"):

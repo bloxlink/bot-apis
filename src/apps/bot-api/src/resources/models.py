@@ -36,3 +36,4 @@ class GuildData:
 
     nicknameTemplate: str = DEFAULTS.get("nicknameTemplate")
     unverifiedNickname: str = None
+    allowOldRoles: bool = False

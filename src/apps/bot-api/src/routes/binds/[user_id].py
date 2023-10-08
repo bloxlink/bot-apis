@@ -403,7 +403,7 @@ class Route:
                         {"type": "verified"},
                         [str(verified_role["id"])],
                         [str(unverified_role["id"])]
-                        if unverified_role and unverified_role["id"] in member["roles"]
+                        if unverified_role and str(unverified_role["id"]) in member["roles"]
                         else [],
                         default_nickname_template,
                     ]
@@ -415,7 +415,7 @@ class Route:
                         {"type": "unverified"},
                         [str(unverified_role["id"])],
                         [str(verified_role["id"])]
-                        if verified_role and verified_role["id"] in member["roles"]
+                        if verified_role and str(verified_role["id"]) in member["roles"]
                         else [],
                         None,
                     ]

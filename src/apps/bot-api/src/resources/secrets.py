@@ -14,8 +14,9 @@ VALID_SECRETS = (
     "REDIS_HOST",
     "REDIS_PORT",
     "REDIS_PASSWORD",
-    "BOT_API",
     "BOT_API_AUTH",
+    "SERVER_HOST",
+    "SERVER_PORT"
 )
 
 for secret in VALID_SECRETS:

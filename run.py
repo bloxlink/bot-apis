@@ -1,6 +1,5 @@
 import subprocess
 import signal
-import os
 
 APPS = {
     "roblox-info-server": "python3.10 src/main.py",

@@ -6,8 +6,8 @@ from typing import Callable, Iterable
 import aiohttp
 from requests.utils import requote_uri
 
-from resources.exceptions import RobloxAPIError, RobloxDown, RobloxNotFound
-from resources.secrets import PROXY_URL
+from .exceptions import RobloxAPIError, RobloxDown, RobloxNotFound
+from .secrets import PROXY_URL
 
 __all__ = ("fetch", "ReturnType", "find")
 
@@ -124,7 +124,8 @@ async def fetch(
             elif return_data is ReturnType.JSON:
                 if proxied:
                     if not isinstance(response_body, dict):
-                        print("Roblox API Error: ", old_url, type(response_body), response_body, flush=True)
+                        print("Roblox API Error: ", old_url, type(
+                            response_body), response_body, flush=True)
 
                         if raise_on_failure:
                             raise RobloxAPIError()

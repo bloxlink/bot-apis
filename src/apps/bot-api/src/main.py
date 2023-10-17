@@ -8,7 +8,7 @@ from sanic import Sanic
 from sanic.worker.loader import AppLoader
 
 import resources.database as database
-from config import DEBUG_MODE, SERVER_HOST, SERVER_PORT
+from resources.secrets import SERVER_HOST, SERVER_PORT
 from middleware import auth
 
 logging.basicConfig()
@@ -57,6 +57,8 @@ if __name__ == "__main__":
 
     app = loader.load()
     app.register_middleware(auth, "request")
-    app.prepare(host=SERVER_HOST, port=SERVER_PORT, dev=True)
+    app.prepare(host=SERVER_HOST or "0.0.0.0",
+                port=SERVER_PORT or "8080",
+                dev=True)
 
     Sanic.serve(primary=app, app_loader=loader)

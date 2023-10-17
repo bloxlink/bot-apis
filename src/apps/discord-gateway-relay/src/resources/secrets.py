@@ -15,6 +15,7 @@ VALID_SECRETS = (
     "SENTRY_URL",
     "CLUSTER_ID",
     "RELEASE",
+    "BOT_API_HOST",
     "BOT_API_AUTH"
 )
 

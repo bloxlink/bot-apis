@@ -1,10 +1,10 @@
-FROM python:3.10.10
+FROM python:3.10.1
 
-WORKDIR /
+WORKDIR /usr/src/discord-relay
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+ADD . /usr/src/discord-relay
 
-COPY . .
+RUN pip3 install --trusted-host pypi.python.org -r requirements.txt
 
-CMD [ "python", "src/main.py" ]
+
+ENTRYPOINT ["python3", "src/main.py"]

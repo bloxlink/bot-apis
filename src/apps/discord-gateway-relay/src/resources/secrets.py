@@ -1,5 +1,9 @@
 from os import environ as env
-import config
+
+try:
+    import config
+except ImportError:
+    config = None
 
 
 VALID_SECRETS = (
@@ -12,6 +16,7 @@ VALID_SECRETS = (
     "SENTRY_URL",
     "CLUSTER_ID",
     "RELEASE",
+    "BOT_API_AUTH"
 )
 
 for secret in VALID_SECRETS:

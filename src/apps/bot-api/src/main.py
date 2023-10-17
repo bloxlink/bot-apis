@@ -24,7 +24,8 @@ def register_routes(app: Sanic, path=None):
                 register_routes(app, path + [f"{file_or_folder}"])
             else:
                 proper_path = "/".join(path) + "/" + file_or_folder
-                import_name = proper_path.replace("/", ".").replace(".py", "").replace("src.", "")
+                import_name = proper_path.replace(
+                    "/", ".").replace(".py", "").replace("src.", "")
 
                 route_module = importlib.import_module(import_name)
                 route = getattr(route_module, "Route")()
@@ -58,7 +59,7 @@ if __name__ == "__main__":
     app = loader.load()
     app.register_middleware(auth, "request")
     app.prepare(host=SERVER_HOST or "0.0.0.0",
-                port=SERVER_PORT or "8080",
+                port=int(SERVER_PORT or 8080),
                 dev=True)
 
     Sanic.serve(primary=app, app_loader=loader)

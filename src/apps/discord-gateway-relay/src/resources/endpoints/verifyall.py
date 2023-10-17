@@ -4,7 +4,7 @@ import math
 
 from discord import Forbidden, Guild, HTTPException
 
-from resources.secrets import BOT_API_AUTH, BOT_API_HOST
+from resources.secrets import BIND_API_AUTH, BIND_API
 from resources.ipc import RelayEndpoint, RelayRequest
 from resources.modules.discord import client
 from resources.modules.redis import redis_connection
@@ -79,8 +79,8 @@ class VerifyallEndpoint(RelayEndpoint):
                 f"Sending chunk {i + 1} of {len(split_chunk)} chunks.")
             text, response = await fetch(
                 "POST",
-                f"{BOT_API_HOST}/api/update/users",
-                headers={"Authorization": BOT_API_AUTH},
+                f"{BIND_API}/api/update/users",
+                headers={"Authorization": BIND_API_AUTH},
                 body={"guild_id": guild.id, "channel_id": channel_id,
                       "members": chunk, "is_done": is_final},
                 return_data=ReturnType.TEXT,

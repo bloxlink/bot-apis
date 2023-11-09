@@ -4,6 +4,7 @@ from resources.constants import DEFAULTS
 from resources.database import fetch_guild_data
 from resources.exceptions import UserNotVerified
 from resources.models import GuildData
+from resources.roblox_user import get_asset_ownership
 from resources.utils import find_role_in_guild_roles
 
 
@@ -140,10 +141,10 @@ class Route:
 
         # TODO: Handle other bind types?
         try:
-            if bind_type == "group":
-                if not roblox_account:
-                    raise UserNotVerified()
+            if bind_type in ("group", "asset", "badge", "gamepass") and not roblox_account:
+                raise UserNotVerified()
 
+            if bind_type == "group":
                 user_group: dict | None = roblox_account.get("groupsv2", {}).get(str(bind_id))
 
                 if user_group:
@@ -189,9 +190,11 @@ class Route:
                                 f"{max_roleset}; however, your rank is {user_rank}."
                             )
 
-                    # elif bind_data.get("everyone"):
-                    #     success = True
+                    elif bind_data.get("guest"):
+                        pass
+
                     else:
+                        # Entire group bind & "everyone" bindings.
                         success = True
                         success_explanations.append("You are in this group.")
 
@@ -219,6 +222,14 @@ class Route:
                             bind_roles.add(bind_role_id)
                         elif bind_type == "unverified" and not roblox_account:
                             bind_roles.add(bind_role_id)
+
+            elif bind_type in ("asset", "badge", "gamepass"):
+                success = await get_asset_ownership(roblox_account["id"], bind_type, bind_id)
+
+                if success:
+                    success_explanations.append(f"You own the {bind_type} {bind_id}.")
+                else:
+                    failure_explanations.append(f"You do not own the {bind_type} {bind_id}.")
 
         except UserNotVerified:
             pass

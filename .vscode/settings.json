@@ -11,6 +11,7 @@
         "**/Thumbs.db": true,
         "**/__pycache__": true,
         "**/.venv": true,
+        "**/poetry.lock": true,
     },
     "python.formatting.provider": "none"
 }

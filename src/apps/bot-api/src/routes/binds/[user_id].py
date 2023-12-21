@@ -248,7 +248,7 @@ class Route:
             if entire_group_bind:
                 # find role that matches their roleset
                 for role in guild_roles:
-                    if not role["managed"] and user_group["role"]["name"] == role.name:
+                    if not role["managed"] and user_group["role"]["name"] == role["name"]:
                         bind_roles.add(role["id"])
 
                         break

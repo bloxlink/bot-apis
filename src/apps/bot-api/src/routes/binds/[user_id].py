@@ -137,7 +137,8 @@ class Route:
         failure_explanations = bind_explanations["failure"]
 
         success: bool = False
-        entire_group_bind: bool = "roles" not in bind_data  # find a role matching their roleset
+        entire_group_bind: bool = not bind_data.get("roles", [])
+
 
         # TODO: Handle other bind types?
         try:

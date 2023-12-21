@@ -79,6 +79,9 @@ class Route:
 
         for bind in guild_binds:
             add_roles = bind.get("roles", [])
+            if add_roles is None:
+                add_roles = []
+
             remove_roles = bind.get("removeRoles", [])
 
             bind_type = bind.get("bind", {}).get("type")

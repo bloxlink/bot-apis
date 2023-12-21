@@ -149,7 +149,8 @@ class Route:
                 user_group: dict | None = roblox_account.get("groupsv2", {}).get(str(bind_id))
 
                 if user_group:
-                    # TODO: Handle entire group bindings.
+                    # This handles all the specific rank bindings, entire group bindings and 
+                    # passed along in the "else" block to be handled later.
 
                     user_rank = user_group["role"]["rank"]
 
@@ -249,7 +250,7 @@ class Route:
                 # find role that matches their roleset
                 for role in guild_roles:
                     if not role["managed"] and user_group["role"]["name"] == role["name"]:
-                        bind_roles.add(role["id"])
+                        bind_roles.add(str(role["id"]))
 
                         break
                 else:

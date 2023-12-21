@@ -8,6 +8,7 @@ from resources.models import GuildData
 from resources.roblox_user import get_asset_ownership
 from resources.utils import find_role_in_guild_roles
 
+
 class Route:
     """Calculate what bindings apply to a user."""
 
@@ -139,7 +140,6 @@ class Route:
         success: bool = False
         entire_group_bind: bool = not bind_data.get("roles", [])
 
-
         # TODO: Handle other bind types?
         try:
             if bind_type in ("group", "asset", "badge", "gamepass") and not roblox_account:
@@ -149,7 +149,7 @@ class Route:
                 user_group: dict | None = roblox_account.get("groupsv2", {}).get(str(bind_id))
 
                 if user_group:
-                    # This handles all the specific rank bindings, entire group bindings and 
+                    # This handles all the specific rank bindings, entire group bindings and
                     # passed along in the "else" block to be handled later.
 
                     user_rank = user_group["role"]["rank"]
@@ -190,6 +190,29 @@ class Route:
                             failure_explanations.append(
                                 f"This bind requires your rank to be between {min_roleset} and "
                                 f"{max_roleset}; however, your rank is {user_rank}."
+                            )
+
+                    elif bind_data.get("min"):
+                        min_roleset = bind_data["min"]
+                        if int(min_roleset) <= user_rank:
+                            success = True
+                            success_explanations.append(f"Your rank is above {min_roleset}.")
+                        else:
+                            failure_explanations.append(
+                                f"This bind requires your rank to be above {min_roleset}; "
+                                f"however, your rank is {user_rank}."
+                            )
+
+                    elif bind_data.get("max"):
+                        max_roleset = bind_data["max"]
+
+                        if user_rank <= int(max_roleset):
+                            success = True
+                            success_explanations.append(f"Your rank is below {max_roleset}.")
+                        else:
+                            failure_explanations.append(
+                                f"This bind requires your rank to be below {max_roleset}; "
+                                f"however, your rank is {user_rank}."
                             )
 
                     elif bind_data.get("guest"):

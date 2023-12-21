@@ -37,3 +37,7 @@ class GuildData:
     nicknameTemplate: str = DEFAULTS.get("nicknameTemplate")
     unverifiedNickname: str = None
     allowOldRoles: bool = False
+
+    # Old bind fields.
+    roleBinds: dict = None
+    groupIDs: dict = None

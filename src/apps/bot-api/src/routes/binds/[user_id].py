@@ -1,12 +1,12 @@
 from sanic.response import json
 
+from resources.binds import get_binds
 from resources.constants import DEFAULTS
 from resources.database import fetch_guild_data
 from resources.exceptions import UserNotVerified
 from resources.models import GuildData
 from resources.roblox_user import get_asset_ownership
 from resources.utils import find_role_in_guild_roles
-
 
 class Route:
     """Calculate what bindings apply to a user."""
@@ -300,7 +300,13 @@ class Route:
         roblox_account = json_data.get("roblox_account")
         member: dict = json_data.get("member")
 
-        guild_data: GuildData = await fetch_guild_data(guild["id"], "binds", "nicknameTemplate")
+        guild_data: GuildData = await fetch_guild_data(
+            guild["id"],
+            "nicknameTemplate",
+        )
+
+        # Call get_binds so we can get the converted bind format (if those weren't converted prior.)
+        guild_data.binds = await get_binds(guild["id"])
 
         role_binds: list = guild_data.binds or []
 

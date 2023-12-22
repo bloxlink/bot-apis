@@ -1,5 +1,6 @@
 from sanic.response import json
 
+from resources.binds import get_binds
 from resources.constants import DEFAULTS
 from resources.database import fetch_guild_data
 from resources.exceptions import UserNotVerified
@@ -137,7 +138,7 @@ class Route:
         failure_explanations = bind_explanations["failure"]
 
         success: bool = False
-        entire_group_bind: bool = "roles" not in bind_data  # find a role matching their roleset
+        entire_group_bind: bool = not bind_data.get("roles", [])
 
         # TODO: Handle other bind types?
         try:
@@ -148,7 +149,8 @@ class Route:
                 user_group: dict | None = roblox_account.get("groupsv2", {}).get(str(bind_id))
 
                 if user_group:
-                    # TODO: Handle entire group bindings.
+                    # This handles all the specific rank bindings, entire group bindings and
+                    # passed along in the "else" block to be handled later.
 
                     user_rank = user_group["role"]["rank"]
 
@@ -188,6 +190,29 @@ class Route:
                             failure_explanations.append(
                                 f"This bind requires your rank to be between {min_roleset} and "
                                 f"{max_roleset}; however, your rank is {user_rank}."
+                            )
+
+                    elif bind_data.get("min"):
+                        min_roleset = bind_data["min"]
+                        if int(min_roleset) <= user_rank:
+                            success = True
+                            success_explanations.append(f"Your rank is above {min_roleset}.")
+                        else:
+                            failure_explanations.append(
+                                f"This bind requires your rank to be above {min_roleset}; "
+                                f"however, your rank is {user_rank}."
+                            )
+
+                    elif bind_data.get("max"):
+                        max_roleset = bind_data["max"]
+
+                        if user_rank <= int(max_roleset):
+                            success = True
+                            success_explanations.append(f"Your rank is below {max_roleset}.")
+                        else:
+                            failure_explanations.append(
+                                f"This bind requires your rank to be below {max_roleset}; "
+                                f"however, your rank is {user_rank}."
                             )
 
                     elif bind_data.get("guest"):
@@ -247,8 +272,8 @@ class Route:
             if entire_group_bind:
                 # find role that matches their roleset
                 for role in guild_roles:
-                    if not role["managed"] and user_group["role"]["name"] == role.name:
-                        bind_roles.add(role["id"])
+                    if not role["managed"] and user_group["role"]["name"] == role["name"]:
+                        bind_roles.add(str(role["id"]))
 
                         break
                 else:
@@ -300,7 +325,13 @@ class Route:
         roblox_account = json_data.get("roblox_account")
         member: dict = json_data.get("member")
 
-        guild_data: GuildData = await fetch_guild_data(guild["id"], "binds", "nicknameTemplate")
+        guild_data: GuildData = await fetch_guild_data(
+            guild["id"],
+            "nicknameTemplate",
+        )
+
+        # Call get_binds so we can get the converted bind format (if those weren't converted prior.)
+        guild_data.binds = await get_binds(guild["id"])
 
         role_binds: list = guild_data.binds or []
 

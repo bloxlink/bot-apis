@@ -79,6 +79,9 @@ class Route:
 
         for bind in guild_binds:
             add_roles = bind.get("roles", [])
+            if add_roles is None:
+                add_roles = []
+
             remove_roles = bind.get("removeRoles", [])
 
             bind_type = bind.get("bind", {}).get("type")
@@ -95,8 +98,11 @@ class Route:
             final_roles = list(non_bind_roles)
 
         final_roles = set(final_roles)
-        roles_to_give = set(successful_binds["give"])
-        roles_to_remove = set(successful_binds["remove"])
+
+        # Stringify in case a mismatch somehow occurs.
+        # final_roles and original_roles are stringified by this point.
+        roles_to_give = set([str(x) for x in successful_binds["give"]])
+        roles_to_remove = set([str(x) for x in successful_binds["remove"]])
 
         # Remove roles that will be removed from the roles being given since it's redundant.
         roles_to_give.difference_update(roles_to_remove)

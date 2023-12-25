@@ -1,15 +1,15 @@
 import asyncio
 import logging
 import traceback
-
-from discord import utils as discord_utils
+import logging
 
 import resources.modules.redis as redis
 import resources.modules.discord as discord
 
 
 # Setup logging configuration.
-discord_utils.setup_logging(level=logging.INFO)
+logger = logging.getLogger()
+logging.basicConfig(level=logging.INFO)
 
 
 def handle_task_exception(loop, context):

@@ -82,19 +82,29 @@ async def update_item(domain: str, item_id: str, **aspects) -> None:
     """
     Update an item's aspects in local cache, redis, and database.
     """
-    # # update redis cache
-    # redis_aspects: dict = None
-    # if any(isinstance(x, (dict, list)) for x in aspects.values()): # we don't save lists or dicts via redis
-    #     redis_aspects = dict(aspects)
+    # update redis cache
+    redis_aspects = dict(aspects)
 
-    #     for aspect_name, aspect_value in dict(aspects).items():
-    #         if isinstance(aspect_value, (dict, list)):
-    #             redis_aspects.pop(aspect_name)
+    unset_aspects = {}
+    set_aspects = {}
+    for key, val in aspects.items():
+        if val is None:
+            unset_aspects[key] = ""
+        else:
+            set_aspects[key] = val
 
-    # await self.redis.hmset(f"{domain}:{item_id}", redis_aspects or aspects)
+    # we don't save lists and dicts to redis
+    for aspect_name, aspect_value in dict(aspects).items():
+        if isinstance(aspect_value, (dict, list, bool)) or aspect_value is None:
+            redis_aspects.pop(aspect_name)
+
+    if redis_aspects:
+        await redis.hmset(f"{domain}:{item_id}", redis_aspects)
 
     # update database
-    await mongo.bloxlink[domain].update_one({"_id": item_id}, {"$set": aspects}, upsert=True)
+    await mongo.bloxlink[domain].update_one(
+        {"_id": item_id}, {"$set": set_aspects, "$unset": unset_aspects}, upsert=True
+    )
 
 
 async def fetch_user_data(user: str | dict, *aspects) -> UserData:

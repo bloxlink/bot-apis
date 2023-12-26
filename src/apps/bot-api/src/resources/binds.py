@@ -1,5 +1,6 @@
-from resources.database import fetch_guild_data, update_guild_data, mongo
+from resources.database import fetch_guild_data, mongo, update_guild_data
 from resources.models import GuildData
+
 
 async def get_binds(guild_id: int | str) -> list[dict]:
     """Get the current guild binds.
@@ -21,24 +22,24 @@ async def get_binds(guild_id: int | str) -> list[dict]:
         old_binds = []
 
         if guild_data.groupIDs:
-            old_binds.extend(convert_old_binds(guild_data.groupIDs, "group"))
+            old_binds.extend(convert_v3_binds_to_v4(guild_data.groupIDs, "group"))
 
         if guild_data.roleBinds:
             gamepasses = guild_data.roleBinds.get("gamePasses")
             if gamepasses:
-                old_binds.extend(convert_old_binds(gamepasses, "gamepass"))
+                old_binds.extend(convert_v3_binds_to_v4(gamepasses, "gamepass"))
 
             assets = guild_data.roleBinds.get("assets")
             if assets:
-                old_binds.extend(convert_old_binds(assets, "asset"))
+                old_binds.extend(convert_v3_binds_to_v4(assets, "asset"))
 
             badges = guild_data.roleBinds.get("badges")
             if badges:
-                old_binds.extend(convert_old_binds(badges, "badge"))
+                old_binds.extend(convert_v3_binds_to_v4(badges, "badge"))
 
             group_ranks = guild_data.roleBinds.get("groups")
             if group_ranks:
-                old_binds.extend(convert_old_binds(group_ranks, "group"))
+                old_binds.extend(convert_v3_binds_to_v4(group_ranks, "group"))
 
         # Save old bindings in the new format if any.
         if old_binds:
@@ -54,7 +55,7 @@ async def get_binds(guild_id: int | str) -> list[dict]:
     return guild_data.binds
 
 
-def convert_old_binds(items: dict, bind_type: str) -> list:
+def convert_v3_binds_to_v4(items: dict, bind_type: str) -> list:
     """Convert old bindings to the new bind format.
 
     Args:

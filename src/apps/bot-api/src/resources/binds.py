@@ -1,5 +1,7 @@
-from resources.database import fetch_guild_data, mongo, update_guild_data
+from resources.database import fetch_guild_data, update_guild_data
 from resources.models import GuildData
+
+POP_OLD_BINDS: bool = False
 
 
 async def get_binds(guild_id: int | str) -> list[dict]:
@@ -11,14 +13,14 @@ async def get_binds(guild_id: int | str) -> list[dict]:
     """
 
     guild_id = str(guild_id)
-    guild_data: GuildData = await fetch_guild_data(guild_id, "binds", "groupIDs", "roleBinds")
+    guild_data: GuildData = await fetch_guild_data(
+        guild_id, "binds", "groupIDs", "roleBinds", "converted_binds"
+    )
 
-    # Set to True to remove the old bind fields from the database (groupIDs and roleBinds)
-    POP_OLD_BINDS: bool = False
-
-    # Convert and save old bindings in the new format (only if no new binds exist already).
-    # Should be safe to presume this because the new format should not exist for people yet.
-    if not guild_data.binds:
+    # Convert and save old bindings in the new format
+    if not guild_data.converted_binds and (
+        guild_data.groupIDs is not None or guild_data.roleBinds is not None
+    ):
         old_binds = []
 
         if guild_data.groupIDs:
@@ -41,16 +43,15 @@ async def get_binds(guild_id: int | str) -> list[dict]:
             if group_ranks:
                 old_binds.extend(convert_v3_binds_to_v4(group_ranks, "group"))
 
-        # Save old bindings in the new format if any.
         if old_binds:
-            guild_data.binds = old_binds
-            await update_guild_data(guild_id, binds=guild_data.binds)
+            # Prevent duplicates from being made. Can't use sets because dicts aren't hashable
+            guild_data.binds.extend(bind for bind in old_binds if bind not in guild_data.binds)
 
-    if POP_OLD_BINDS and (guild_data.groupIDs or guild_data.roleBinds):
-        # TODO: Update redis cache? Invalidate old guild data entry?
-        await mongo.bloxlink["guilds"].update_one(
-            {"_id": guild_id}, {"$unset": {"groupIDs": "", "roleBinds": ""}}
-        )
+            await update_guild_data(guild_id, binds=guild_data.binds, converted_binds=True)
+            guild_data.converted_binds = True
+
+    if POP_OLD_BINDS and guild_data.converted_binds:
+        await update_guild_data(guild_id, groupIDs=None, roleBinds=None, converted_binds=None)
 
     return guild_data.binds
 

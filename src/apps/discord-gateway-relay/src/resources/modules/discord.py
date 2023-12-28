@@ -1,12 +1,8 @@
-from discord import (
-    AutoShardedClient,
-    AllowedMentions,
-    Intents,
-    Game,
-)
-from typing import Optional
-from datetime import datetime
 import logging
+from datetime import datetime
+from typing import Optional
+
+from discord import AllowedMentions, AutoShardedClient, Game, Intents
 
 from resources.secrets import DISCORD_TOKEN  # type: ignore[attr-defined]
 

@@ -7,7 +7,7 @@ from discord import Forbidden, Guild, HTTPException
 from resources.ipc import RelayEndpoint, RelayRequest
 from resources.modules.discord import client
 from resources.modules.redis import redis_connection
-from resources.secrets import BIND_API, BIND_API_AUTH
+from resources.secrets import HTTP_BOT_API, HTTP_BOT_AUTH
 from resources.utils import MinimalConversions, ReturnType, fetch
 
 
@@ -73,8 +73,8 @@ class VerifyallEndpoint(RelayEndpoint):
             logging.debug(f"Sending chunk {i + 1} of {len(split_chunk)} chunks.")
             text, response = await fetch(
                 "POST",
-                f"{BIND_API}/api/update/users",
-                headers={"Authorization": BIND_API_AUTH},
+                f"{HTTP_BOT_API}/api/update/users",
+                headers={"Authorization": HTTP_BOT_AUTH},
                 body={"guild_id": guild.id, "channel_id": channel_id, "members": chunk, "is_done": is_final},
                 return_data=ReturnType.TEXT,
                 timeout=None,

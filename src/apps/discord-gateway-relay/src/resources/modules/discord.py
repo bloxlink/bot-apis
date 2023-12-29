@@ -1,14 +1,11 @@
-from discord import (
-    AutoShardedClient,
-    AllowedMentions,
-    Intents,
-    Game,
-)
-from typing import Optional
-from datetime import datetime
 import logging
+from datetime import datetime
+from typing import Optional
 
-from resources.secrets import DISCORD_TOKEN  # type: ignore[attr-defined]
+from discord import AllowedMentions, AutoShardedClient, Game, Intents, Member
+
+from resources.secrets import DISCORD_TOKEN, HTTP_BOT_API, HTTP_BOT_AUTH
+from resources.utils import MinimalConversions, ReturnType, fetch
 
 logger = logging.getLogger()
 intents = Intents.none()
@@ -27,6 +24,22 @@ client = AutoShardedClient(
 @client.event
 async def on_ready():
     logger.info(f"Bot has been logged in & is ready as {client.user}")
+
+
+@client.event
+async def on_member_join(member: Member):
+    text, response = await fetch(
+        "POST",
+        f"{HTTP_BOT_API}/api/update/join/{member.guild.id}/{member.id}",
+        headers={"Authorization": HTTP_BOT_AUTH},
+        body=MinimalConversions.convert_member(member),
+        return_data=ReturnType.TEXT,
+        timeout=None,
+    )
+    logger.debug(f"BOT SERVER RESPONSE: {response.status}, {text}")
+
+    if response.status > 400:
+        logger.error(f"BOT SERVER RESPONSE: {response.status}, {text}")
 
 
 async def run():

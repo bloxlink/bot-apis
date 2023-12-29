@@ -15,8 +15,8 @@ VALID_SECRETS = (
     "SENTRY_URL",
     "CLUSTER_ID",
     "RELEASE",
-    "BIND_API",
-    "BIND_API_AUTH"
+    "HTTP_BOT_API",
+    "HTTP_BOT_AUTH",
 )
 
 for secret in VALID_SECRETS:

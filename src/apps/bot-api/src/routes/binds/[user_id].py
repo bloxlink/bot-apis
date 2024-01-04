@@ -216,7 +216,7 @@ class Route:
                             )
 
                     elif bind_data.get("guest"):
-                        pass
+                        raise NotImplementedError()
 
                     else:
                         # Entire group bind & "everyone" bindings.

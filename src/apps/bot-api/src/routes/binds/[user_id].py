@@ -98,12 +98,16 @@ class Route:
 
         if guild_data.verifiedRoleEnabled or guild_data.unverifiedRoleEnabled:
             for role in filter(lambda r: not r["managed"], guild["roles"]):
-                # fmt: off
-                if (role["name"] == verified_role_name or str(role["id"]) == guild_data.verifiedRole) and guild_data.verifiedRoleEnabled:
-                    verified_role = role
-                elif (role["name"] == unverified_role_name or str(role["id"]) == guild_data.unverifiedRole) and guild_data.unverifiedRoleEnabled:
-                    unverified_role = role
-                # fmt: on
+                role_name = role["name"]
+                role_id = str(role["id"])
+
+                if guild_data.verifiedRoleEnabled:
+                    if role_name == verified_role_name or role_id == guild_data.verifiedRole:
+                        verified_role = role
+
+                if guild_data.unverifiedRoleEnabled:
+                    if role_name == unverified_role_name or role_id == guild_data.unverifiedRole:
+                        unverified_role = role
 
         return verified_role, unverified_role
 

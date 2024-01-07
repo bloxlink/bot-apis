@@ -218,7 +218,9 @@ class Route:
                             )
 
                     elif bind_data.get("guest"):
-                        raise NotImplementedError()
+                        failure_explanations.append(
+                            f"This bind requires you to not be in the group {bind_id}."
+                        )
 
                     else:
                         # Entire group bind & "everyone" bindings.

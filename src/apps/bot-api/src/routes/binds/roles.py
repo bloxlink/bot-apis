@@ -63,21 +63,27 @@ class Route:
         if not guild_id:
             return json({"success": False, "reason": "No guild_id was given."})
 
-        final_roles: list = json_data.get("user_roles", [])
-        final_roles = [str(x) for x in final_roles]
-        original_roles = set(final_roles)
+        response = await calculate_final_roles(json_data, guild_id)
 
-        successful_binds: dict = json_data.get(
-            "successful_binds", {"give": [], "remove": []})
+        return json({"success": True, **response})
 
-        guild_data: GuildData = await fetch_guild_data(guild_id, "binds", "allowOldRoles")
-        guild_binds: list = guild_data.binds or []
-        allow_old_roles = guild_data.allowOldRoles
 
-        # Get all the roles that are related to a bind in some way.
-        # This does not include the default verified/unverified roles.
-        bind_related_roles = set()
-        entire_group_binds = []
+async def calculate_final_roles(data: dict, guild_id: str) -> dict:
+    final_roles: list = data.get("user_roles", [])
+    final_roles = [str(x) for x in final_roles]
+    original_roles = set(final_roles)
+
+    successful_binds: dict = data.get("successful_binds", {"give": [], "remove": []})
+
+    guild_data: GuildData = await fetch_guild_data(guild_id, "binds", "allowOldRoles")
+    guild_binds: list = guild_data.binds or []
+    allow_old_roles = guild_data.allowOldRoles
+
+    # Get all the roles that are related to a bind in some way.
+    # This does not include the default verified/unverified roles.
+    # TODO: Include entire group binds.
+    bind_related_roles = set()
+    entire_group_binds = []
 
         for bind in guild_binds:
             add_roles = bind.get("roles") or []
@@ -86,42 +92,39 @@ class Route:
 
             remove_roles = bind.get("removeRoles") or []
 
-            bind_type = bind.get("bind", {}).get("type")
-            if (bind_type == "group") and not add_roles:
-                entire_group_binds.append(bind["bind"]["id"])
+        bind_type = bind.get("bind", {}).get("type")
+        if (bind_type == "group") and not add_roles:
+            entire_group_binds.append(bind["bind"]["id"])
 
-            bind_related_roles.update(add_roles)
-            bind_related_roles.update(remove_roles)
+        bind_related_roles.update(add_roles)
+        bind_related_roles.update(remove_roles)
 
-        # Update final_roles so that way we just have the roles of a user that
-        # we should not change if allowOldRoles is disabled.
-        if not allow_old_roles:
-            non_bind_roles = set(final_roles).difference(bind_related_roles)
-            final_roles = list(non_bind_roles)
+    # Update final_roles so that way we just have the roles of a user that
+    # we should not change if allowOldRoles is disabled.
+    if not allow_old_roles:
+        non_bind_roles = set(final_roles).difference(bind_related_roles)
+        final_roles = list(non_bind_roles)
 
-        final_roles = set(final_roles)
+    final_roles = set(final_roles)
 
-        # Stringify in case a mismatch somehow occurs.
-        # final_roles and original_roles are stringified by this point.
-        roles_to_give = set([str(x) for x in successful_binds["give"]])
-        roles_to_remove = set([str(x) for x in successful_binds["remove"]])
+    # Stringify in case a mismatch somehow occurs.
+    # final_roles and original_roles are stringified by this point.
+    roles_to_give = set([str(x) for x in successful_binds["give"]])
+    roles_to_remove = set([str(x) for x in successful_binds["remove"]])
 
-        # Remove roles that will be removed from the roles being given since it's redundant.
-        roles_to_give.difference_update(roles_to_remove)
+    # Remove roles that will be removed from the roles being given since it's redundant.
+    roles_to_give.difference_update(roles_to_remove)
 
-        # Figure out which roles were added (compared to original roles) & update final_roles.
-        final_given_roles = roles_to_give.difference(original_roles)
-        final_roles.update(roles_to_give)
+    # Figure out which roles were added (compared to original roles) & update final_roles.
+    final_given_roles = roles_to_give.difference(original_roles)
+    final_roles.update(roles_to_give)
 
-        # Figure out which roles were removed (compared to original_roles) & update final_roles.
-        final_removed_roles = roles_to_remove.intersection(original_roles)
-        final_roles.difference_update(roles_to_remove)
+    # Figure out which roles were removed (compared to original_roles) & update final_roles.
+    final_removed_roles = roles_to_remove.intersection(original_roles)
+    final_roles.difference_update(roles_to_remove)
 
-        return json(
-            {
-                "success": True,
-                "final_roles": list(final_roles),
-                "added_roles": list(final_given_roles),
-                "removed_roles": list(final_removed_roles),
-            }
-        )
+    return {
+        "final_roles": list(final_roles),
+        "added_roles": list(final_given_roles),
+        "removed_roles": list(final_removed_roles),
+    }

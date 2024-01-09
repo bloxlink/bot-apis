@@ -79,6 +79,22 @@ class RobloxGroup:
 
         return f"{roleset_name} ({roleset_id})" if include_id else roleset_name
 
+    async def rolesets_to_roles(self, roles: list) -> dict:
+        role_output = {}
+
+        if not self.synced:
+            await self.sync()
+
+        for role in roles:
+            if role["managed"]:
+                continue
+
+            for roleset_name in self.rolesets.values():
+                if role["name"] == roleset_name:
+                    role_output[roleset_name] = role["id"]
+
+        return role_output
+
 
 async def get_group(group_id_or_url: str | int) -> RobloxGroup:
     """Get and sync a RobloxGroup.

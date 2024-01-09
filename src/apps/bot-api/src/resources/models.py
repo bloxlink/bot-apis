@@ -23,6 +23,8 @@ class UserData:
 
 @define(slots=True)
 class GuildData:
+    """Representation of the stored settings for a guild"""
+
     id: int
     binds: list = default_field([])  # FIXME
 
@@ -34,9 +36,17 @@ class GuildData:
     unverifiedRoleName: str = "Unverified"  # deprecated
     unverifiedRole: str = None
 
+    ageLimit: int = None
+    disallowAlts: bool = None
+    disallowBanEvaders: str = None  # Site sets it to "ban" when enabled. Null when disabled.
+    groupLock: dict = None
+
     nicknameTemplate: str = DEFAULTS.get("nicknameTemplate")
     unverifiedNickname: str = None
     allowOldRoles: bool = False
+
+    highTrafficServer: bool = None
+    premium: dict = None
 
     # Old bind fields.
     roleBinds: dict = None

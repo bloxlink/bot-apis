@@ -270,5 +270,5 @@ def json_binds_to_guild_binds(bind_list: list) -> list:
 
         binds.append(classed_bind)
 
-    bind_list.sort(key=lambda e: e.bind["id"])
-    return bind_list
+    binds.sort(key=lambda e: e.bind["id"])
+    return binds

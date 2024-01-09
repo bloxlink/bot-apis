@@ -1,5 +1,6 @@
 from sanic.response import json
 
+from resources.binds import GroupBind, GuildBind, get_binds
 from resources.database import fetch_guild_data
 from resources.models import GuildData
 
@@ -75,7 +76,9 @@ async def calculate_final_roles(data: dict, guild_id: str) -> dict:
 
     successful_binds: dict = data.get("successful_binds", {"give": [], "remove": []})
 
-    guild_data: GuildData = await fetch_guild_data(guild_id, "binds", "allowOldRoles")
+    guild_data: GuildData = await fetch_guild_data(guild_id, "allowOldRoles")
+    guild_data.binds = await get_binds(guild_id)
+
     guild_binds: list = guild_data.binds or []
     allow_old_roles = guild_data.allowOldRoles
 
@@ -85,19 +88,15 @@ async def calculate_final_roles(data: dict, guild_id: str) -> dict:
     bind_related_roles = set()
     entire_group_binds = []
 
-        for bind in guild_binds:
-            add_roles = bind.get("roles") or []
-            if add_roles is None:
-                add_roles = []
+    for bind in guild_binds:
+        bind: GuildBind
 
-            remove_roles = bind.get("removeRoles") or []
+        if bind is GroupBind:
+            if bind.subtype == "linked_group":
+                entire_group_binds.append(bind)
 
-        bind_type = bind.get("bind", {}).get("type")
-        if (bind_type == "group") and not add_roles:
-            entire_group_binds.append(bind["bind"]["id"])
-
-        bind_related_roles.update(add_roles)
-        bind_related_roles.update(remove_roles)
+        bind_related_roles.update(bind.roles)
+        bind_related_roles.update(bind.removeRoles)
 
     # Update final_roles so that way we just have the roles of a user that
     # we should not change if allowOldRoles is disabled.

@@ -40,7 +40,6 @@ class GuildBind:
     def __attrs_post_init__(self):
         self.id = self.bind.get("id")
         self.type = self.bind.get("type")
-        self.entity = create_entity(self.type, self.id)
 
     def to_dict(self) -> dict:
         return {

@@ -38,8 +38,10 @@ class GuildBind:
     bind: dict = default_field({"type": "", "id": None})
 
     def __attrs_post_init__(self):
+        # pylint: disable=E1101
         self.id = self.bind.get("id")
         self.type = self.bind.get("type")
+        # pylint: enable=E1101
 
     def to_dict(self) -> dict:
         return {
@@ -72,11 +74,13 @@ class GroupBind(GuildBind):
     guest: bool = None
 
     def __attrs_post_init__(self):
+        # pylint: disable=E1101
         self.min = self.bind.get("min", None)
         self.max = self.bind.get("max", None)
         self.roleset = self.bind.get("roleset", None)
         self.everyone = self.bind.get("everyone", None)
         self.guest = self.bind.get("guest", None)
+        # pylint: enable=E1101
 
         return super().__attrs_post_init__()
 

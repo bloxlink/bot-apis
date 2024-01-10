@@ -1,12 +1,12 @@
 from sanic.response import json
 
 from resources.binds import GroupBind, GuildBind, get_binds
-from resources.constants import DEFAULTS
 from resources.database import fetch_guild_data, update_guild_data
 from resources.models import GuildData
 from resources.roblox_group import RobloxGroup
 from resources.roblox_user import get_asset_ownership
 from routes.binds.roles import calculate_final_roles
+from routes.nickname.parse import parse_nickname
 
 
 class Route:
@@ -201,8 +201,72 @@ class Route:
 
         return output
 
-    async def calculate_nickname(self):
-        pass
+    async def calculate_nickname(
+        self,
+        discord_guild: dict,
+        roblox_user: dict,
+        member_data: dict,
+        bindings: list[GuildBind],
+        roles_applied: list[str] = None,
+    ) -> str:
+        guild_id = discord_guild["id"]
+        guild_name = discord_guild.get("name")
+        guild_roles = discord_guild.get("roles")
+        roles_applied = roles_applied or []
+
+        nickname_to_role = []
+        for bind in bindings:
+            if isinstance(bind, GroupBind):
+                if bind.subtype == "linked_group":
+                    group = RobloxGroup(bind.id)
+                    rank_mappings = await group.rolesets_to_roles(discord_guild.get("roles", []))
+
+                    for role in roles_applied:
+                        if role in rank_mappings.values():
+                            role = next((x for x in guild_roles if role == str(x["id"])), None)
+                            nickname_to_role.append((bind, role))
+                    continue
+
+            if bind.nickname and bind.roles:
+                for role in bind.roles:
+                    role = next((x for x in guild_roles if role == str(x["id"])), None)
+                    nickname_to_role.append((bind, role))
+
+        final_match = sorted(
+            nickname_to_role,
+            key=lambda x: (x[1].get("position"), x[1]["id"]) if x else (),
+            reverse=True,
+        )
+        if final_match:
+            final_match = final_match[0]
+            nickname_template = final_match[0].nickname
+
+            return await parse_nickname(
+                user_data={
+                    "name": member_data.get("name"),
+                    "nick": member_data.get("nick"),
+                    "id": member_data.get("id"),
+                },
+                template=nickname_template,
+                is_nickname=True,
+                guild_id=guild_id,
+                guild_name=guild_name,
+                group_id=final_match[0].id if final_match[0].type == "group" else None,
+                roblox_user=roblox_user,
+            )
+        else:
+            return await parse_nickname(
+                user_data={
+                    "name": member_data.get("name"),
+                    "nick": member_data.get("nick"),
+                    "id": member_data.get("id"),
+                },
+                template="",
+                is_nickname=True,
+                guild_id=guild_id,
+                guild_name=guild_name,
+                roblox_user=roblox_user,
+            )
 
     def get_custom_verification_roles(self, role_binds: list[GuildBind]) -> tuple[list, list]:
         """Get (non-criteria) bindings that are related to verification.
@@ -287,7 +351,6 @@ class Route:
 
         guild_data: GuildData = await fetch_guild_data(
             guild_id,
-            "nicknameTemplate",
             "verifiedRoleEnabled",
             "verifiedRole",
             "verifiedRoleName",
@@ -326,6 +389,9 @@ class Route:
         give_roles = []
         take_roles = []
 
+        # All the binds that qualify for a user - used for nickname handling.
+        applicable_binds = []
+
         is_restricted = restrict_data["is_restricted"]
 
         # Treat as unverified.
@@ -361,6 +427,9 @@ class Route:
 
         # Only try giving binds when not restricted
         if not is_restricted:
+            applicable_binds.extend(bind_data["successful"])
+            applicable_binds.extend(bind_data["linked_group"])
+
             for bind in bind_data["successful"]:
                 give_roles.extend(bind.roles)
                 take_roles.extend(bind.removeRoles)
@@ -397,6 +466,12 @@ class Route:
         final_response["roles"]["added"] = user_role_data["added_roles"]
         final_response["roles"]["removed"] = user_role_data["removed_roles"]
 
-        default_nickname_template = guild_data.nicknameTemplate or DEFAULTS.get("nicknameTemplate")
+        final_response["nickname"] = await self.calculate_nickname(
+            discord_guild=guild,
+            roblox_user=roblox_account if not is_restricted else {},
+            member_data=member,
+            bindings=applicable_binds,
+            roles_applied=final_response["roles"]["added"],
+        )
 
         return json({"success": True, **final_response})

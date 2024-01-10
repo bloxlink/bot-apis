@@ -1,8 +1,11 @@
+import copy
+
 from sanic.response import json
 
 from resources.binds import GroupBind, GuildBind, get_binds
 from resources.database import fetch_guild_data
 from resources.models import GuildData
+from resources.roblox_group import RobloxGroup
 
 
 class Route:
@@ -61,55 +64,60 @@ class Route:
         json_data: dict = request.json or {}
 
         guild_id: str = json_data.get("guild_id")
+        guild_roles: list = json_data.get("guild_roles")
         if not guild_id:
             return json({"success": False, "reason": "No guild_id was given."})
+        if not guild_roles:
+            return json({"success": False, "reason": "No guild_roles were given."})
 
-        response = await calculate_final_roles(json_data, guild_id)
+        response = await calculate_final_roles(json_data, guild_id, guild_roles)
 
         return json({"success": True, **response})
 
 
-async def calculate_final_roles(data: dict, guild_id: str) -> dict:
+async def calculate_final_roles(data: dict, guild_id: str, guild_roles: list) -> dict:
     final_roles: list = data.get("user_roles", [])
-    final_roles = [str(x) for x in final_roles]
-    original_roles = set(final_roles)
+    final_roles = set(str(x) for x in final_roles)
+    original_roles = copy.copy(final_roles)
 
     successful_binds: dict = data.get("successful_binds", {"give": [], "remove": []})
 
     guild_data: GuildData = await fetch_guild_data(guild_id, "allowOldRoles")
     guild_data.binds = await get_binds(guild_id)
 
-    guild_binds: list = guild_data.binds or []
-    allow_old_roles = guild_data.allowOldRoles
-
     # Get all the roles that are related to a bind in some way.
     # This does not include the default verified/unverified roles.
-    # TODO: Include entire group binds.
     bind_related_roles = set()
-    entire_group_binds = []
+    linked_group_roles = set()
 
-    for bind in guild_binds:
+    for bind in guild_data.binds:
         bind: GuildBind
 
-        if bind is GroupBind:
+        if isinstance(bind, GroupBind):
             if bind.subtype == "linked_group":
-                entire_group_binds.append(bind)
+                group = RobloxGroup(bind.id)
+                matched_roles = await group.rolesets_to_roles(guild_roles)
 
-        bind_related_roles.update(bind.roles)
-        bind_related_roles.update(bind.removeRoles)
+                linked_group_roles.update([str(value) for value in matched_roles.values()])
+
+        if bind.roles:
+            bind_related_roles.update(str(x) for x in bind.roles)
+        if bind.removeRoles:
+            bind_related_roles.update(str(x) for x in bind.removeRoles)
+
+    # Stringify in case a mismatch somehow occurs.
+    roles_to_give = set(str(x) for x in successful_binds["give"])
+    roles_to_remove = set(str(x) for x in successful_binds["remove"])
 
     # Update final_roles so that way we just have the roles of a user that
     # we should not change if allowOldRoles is disabled.
-    if not allow_old_roles:
-        non_bind_roles = set(final_roles).difference(bind_related_roles)
-        final_roles = list(non_bind_roles)
+    if not guild_data.allowOldRoles:
+        final_roles.difference_update(bind_related_roles, linked_group_roles)
 
-    final_roles = set(final_roles)
-
-    # Stringify in case a mismatch somehow occurs.
-    # final_roles and original_roles are stringified by this point.
-    roles_to_give = set([str(x) for x in successful_binds["give"]])
-    roles_to_remove = set([str(x) for x in successful_binds["remove"]])
+        # Add entire group-related roles to list of roles to remove.
+        linked_group_roles.difference_update(roles_to_give)
+        linked_group_roles.intersection_update(original_roles)
+        roles_to_remove.update(linked_group_roles)
 
     # Remove roles that will be removed from the roles being given since it's redundant.
     roles_to_give.difference_update(roles_to_remove)

@@ -56,6 +56,7 @@ class Route:
                 "reason": (str),
             }
         """
+
         json_data: dict = request.json or {}
 
         guild_id: str = json_data.get("guild_id")
@@ -66,7 +67,8 @@ class Route:
         final_roles = [str(x) for x in final_roles]
         original_roles = set(final_roles)
 
-        successful_binds: dict = json_data.get("successful_binds", {"give": [], "remove": []})
+        successful_binds: dict = json_data.get(
+            "successful_binds", {"give": [], "remove": []})
 
         guild_data: GuildData = await fetch_guild_data(guild_id, "binds", "allowOldRoles")
         guild_binds: list = guild_data.binds or []
@@ -78,11 +80,11 @@ class Route:
         entire_group_binds = []
 
         for bind in guild_binds:
-            add_roles = bind.get("roles", [])
+            add_roles = bind.get("roles") or []
             if add_roles is None:
                 add_roles = []
 
-            remove_roles = bind.get("removeRoles", [])
+            remove_roles = bind.get("removeRoles") or []
 
             bind_type = bind.get("bind", {}).get("type")
             if (bind_type == "group") and not add_roles:

@@ -41,12 +41,12 @@ class RobloxGroup:
             return
 
         if self.rolesets is None:
-            json_data, _ = await fetch("GET", f"{GROUP_API}/{self.id}/roles")
+            json_data, _ = await fetch(f"{GROUP_API}/{self.id}/roles", "GET")
 
             self.rolesets = {int(roleset["rank"]): roleset["name"].strip() for roleset in json_data["roles"]}
 
         if self.name is None or self.description is None or self.member_count is None:
-            json_data, _ = await fetch("GET", f"{GROUP_API}/{self.id}")
+            json_data, _ = await fetch(f"{GROUP_API}/{self.id}", "GET")
 
             self.name = json_data.get("name")
             self.description = json_data.get("description")

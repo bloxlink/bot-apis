@@ -1,10 +1,10 @@
-from sanic import redirect
 from sanic.response import json
 
 from resources.binds import GroupBind, GuildBind, get_binds
 from resources.constants import DEFAULTS
 from resources.database import fetch_guild_data, update_guild_data
 from resources.models import GuildData
+from resources.roblox_group import RobloxGroup
 from resources.roblox_user import get_asset_ownership
 from routes.binds.roles import calculate_final_roles
 
@@ -365,6 +365,19 @@ class Route:
                 give_roles.extend(bind.roles)
                 take_roles.extend(bind.removeRoles)
 
+            # Entire group bindings.
+            for eg_bind in bind_data["linked_group"]:
+                group = RobloxGroup(eg_bind.id)
+                rank_mappings = await group.rolesets_to_roles(guild.get("roles", []))
+
+                user_group: dict = roblox_account.get("groupsv2", {}).get(str(eg_bind.id))
+                user_rank = user_group["role"]["name"]
+                if not rank_mappings.get(user_rank):
+                    if user_rank not in final_response["roles"]["missing"]:
+                        final_response["roles"]["missing"].append(user_rank)
+                else:
+                    give_roles.append(rank_mappings.get(user_rank))
+
         give_roles = set(give_roles)
         take_roles = set(take_roles)
 
@@ -377,6 +390,7 @@ class Route:
                 },
             },
             guild_id=guild_id,
+            guild_roles=guild["roles"],
         )
 
         final_response["roles"]["final"] = user_role_data["final_roles"]

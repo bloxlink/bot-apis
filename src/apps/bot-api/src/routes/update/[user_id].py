@@ -90,13 +90,11 @@ class Route:
                 else:
                     # no match was found - restrict the user.
                     output["is_restricted"] = True
-                    # fmt: off
-                    output["reason"] = (
-                        f"User is not the required rank in the group {group_id}.{dm_message}"
-                    )
-                    # fmt: on
+                    output["reason"] = f"User is not the required rank in the group {group_id}.{dm_message}"
                     output["action"] = action
                     output["source"] = "groupLock"
+
+                    return output
 
         return output
 

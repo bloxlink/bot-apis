@@ -78,7 +78,7 @@ class Route:
 async def calculate_final_roles(data: dict, guild_id: str, guild_roles: list) -> dict:
     final_roles: list = data.get("user_roles", [])
     final_roles = set(str(x) for x in final_roles)
-    original_roles = copy.copy(final_roles)
+    original_roles: set = copy.copy(final_roles)
 
     successful_binds: dict = data.get("successful_binds", {"give": [], "remove": []})
 
@@ -127,8 +127,8 @@ async def calculate_final_roles(data: dict, guild_id: str, guild_roles: list) ->
     final_roles.update(roles_to_give)
 
     # Figure out which roles were removed (compared to original_roles) & update final_roles.
-    final_removed_roles = roles_to_remove.intersection(original_roles)
     final_roles.difference_update(roles_to_remove)
+    final_removed_roles = original_roles.difference(final_roles)
 
     return {
         "final_roles": list(final_roles),

@@ -33,6 +33,7 @@ class Route:
                 output["is_restricted"] = True
                 output["reason"] = "User is not verified with Bloxlink."
                 output["action"] = "kick"
+                output["source"] = "ageLimit"
 
                 return output
 
@@ -42,6 +43,7 @@ class Route:
                     output["is_restricted"] = True
                     output["reason"] = f"User's account age is less than {guild_data.ageLimit} days old."
                     output["action"] = "kick"
+                    output["source"] = "ageLimit"
 
                     return output
 
@@ -54,6 +56,7 @@ class Route:
                 output["is_restricted"] = True
                 output["reason"] = "User is not verified with Bloxlink."
                 output["action"] = "kick" if kick_unverified else "dm"
+                output["source"] = "groupLock"
 
                 return output
 
@@ -62,12 +65,15 @@ class Route:
                 required_rolesets = group_data.get("roleSets")
 
                 dm_message = group_data.get("dmMessage")
+                if dm_message:
+                    dm_message = f"**The following text is from the server admins:**\n> {dm_message}"
 
                 group_match = roblox_user.get("groupsv2", {}).get(group_id)
                 if group_match is None:
                     output["is_restricted"] = True
-                    output["reason"] = f"User is not in the group {group_id}. >>> {dm_message}"
+                    output["reason"] = f"User is not in the group {group_id}.\n\n{dm_message}"
                     output["action"] = action
+                    output["source"] = "groupLock"
 
                     return output
 
@@ -86,10 +92,11 @@ class Route:
                     output["is_restricted"] = True
                     # fmt: off
                     output["reason"] = (
-                        f"User is not the required rank in the group {group_id}.\n>>> {dm_message}"
+                        f"User is not the required rank in the group {group_id}.\n\n{dm_message}"
                     )
                     # fmt: on
                     output["action"] = action
+                    output["source"] = "groupLock"
 
         return output
 

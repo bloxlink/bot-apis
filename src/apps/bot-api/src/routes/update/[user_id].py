@@ -64,7 +64,7 @@ class Route:
                 action = group_data.get("verifiedAction", "dm")
                 required_rolesets = group_data.get("roleSets")
 
-                dm_message = group_data.get("dmMessage")
+                dm_message = group_data.get("dmMessage", "")
                 if dm_message:
                     dm_message = f"**The following text is from the server admins:**\n> {dm_message}"
 

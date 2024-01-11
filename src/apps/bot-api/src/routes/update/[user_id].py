@@ -64,14 +64,14 @@ class Route:
                 action = group_data.get("verifiedAction", "dm")
                 required_rolesets = group_data.get("roleSets")
 
-                dm_message = group_data.get("dmMessage", "")
+                dm_message = group_data.get("dmMessage") or ""
                 if dm_message:
-                    dm_message = f"**The following text is from the server admins:**\n> {dm_message}"
+                    dm_message = f"\n\n**The following text is from the server admins:**\n> {dm_message}"
 
                 group_match = roblox_user.get("groupsv2", {}).get(group_id)
                 if group_match is None:
                     output["is_restricted"] = True
-                    output["reason"] = f"User is not in the group {group_id}.\n\n{dm_message}"
+                    output["reason"] = f"User is not in the group {group_id}.{dm_message}"
                     output["action"] = action
                     output["source"] = "groupLock"
 
@@ -92,7 +92,7 @@ class Route:
                     output["is_restricted"] = True
                     # fmt: off
                     output["reason"] = (
-                        f"User is not the required rank in the group {group_id}.\n\n{dm_message}"
+                        f"User is not the required rank in the group {group_id}.{dm_message}"
                     )
                     # fmt: on
                     output["action"] = action
@@ -113,9 +113,7 @@ class Route:
         default_verified, default_unverified = await self.get_default_verification_roles(
             discord_guild, guild_data
         )
-        custom_verified, custom_unverified = self.get_custom_verification_roles(
-            [bind.to_dict() for bind in guild_data.binds]
-        )
+        custom_verified, custom_unverified = self.get_custom_verification_roles(guild_data.binds)
 
         if not custom_verified:
             output["verified"] = default_verified
@@ -369,6 +367,8 @@ class Route:
             "disallowBanEvaders",
             "groupLock",
         )
+        # Call get_binds so we can get the converted bind format (if those weren't converted prior.)
+        guild_data.binds = await get_binds(guild_id)
 
         final_response = {
             "nickname": None,
@@ -383,11 +383,9 @@ class Route:
 
         restrict_data = self.calculate_restrictions(guild_data=guild_data, roblox_user=roblox_account)
         final_response["restrictions"] = restrict_data
+        is_restricted = restrict_data["is_restricted"]
 
         verified_data = await self.calculate_verification_roles(guild_data=guild_data, discord_guild=guild)
-
-        # Call get_binds so we can get the converted bind format (if those weren't converted prior.)
-        guild_data.binds = await get_binds(guild_id)
 
         bind_data = await self.calculate_binds(guild_data=guild_data, roblox_user=roblox_account)
 
@@ -398,8 +396,6 @@ class Route:
 
         # All the binds that qualify for a user - used for nickname handling.
         applicable_binds = []
-
-        is_restricted = restrict_data["is_restricted"]
 
         # Treat as unverified.
         if not roblox_account or is_restricted:

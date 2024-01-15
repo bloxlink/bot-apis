@@ -8,14 +8,7 @@ from redis.asyncio import Redis
 from resources.models import GuildData, UserData
 
 # pylint: disable=no-name-in-module
-from resources.secrets import (
-    MONGO_CA_FILE,
-    MONGO_URL,
-    REDIS_HOST,
-    REDIS_PASSWORD,
-    REDIS_PORT,
-    REDIS_URL,
-)
+from resources.secrets import MONGO_CA_FILE, MONGO_URL, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_URL
 
 mongo: AsyncIOMotorClient = None
 redis: Redis = None
@@ -32,15 +25,13 @@ async def connect_database():
             with open("src/cert.crt", "w") as f:
                 f.write(MONGO_CA_FILE)
 
-    mongo = AsyncIOMotorClient(
-        MONGO_URL, tlsCAFile="src/cert.crt" if MONGO_CA_FILE else None)
+    mongo = AsyncIOMotorClient(MONGO_URL, tlsCAFile="src/cert.crt" if MONGO_CA_FILE else None)
     mongo.get_io_loop = asyncio.get_running_loop
 
     if REDIS_URL:
         redis = Redis.from_url(REDIS_URL, decode_responses=True)
     else:
-        redis = Redis(host=REDIS_HOST, port=REDIS_PORT,
-                      password=REDIS_PASSWORD, decode_responses=True)
+        redis = Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, decode_responses=True)
 
 
 async def fetch_item(domain: str, constructor: Callable, item_id: str, *aspects) -> object:
@@ -63,8 +54,7 @@ async def fetch_item(domain: str, constructor: Callable, item_id: str, *aspects)
 
         if item and not isinstance(item, (list, dict)):
             if aspects:
-                items = {x: item[x] for x in aspects if item.get(
-                    x) and not isinstance(item[x], dict)}
+                items = {x: item[x] for x in aspects if item.get(x) and not isinstance(item[x], dict)}
                 if items:
                     await redis.hset(f"{domain}:{item_id}", items)
             else:

@@ -63,9 +63,6 @@ async def parse_nickname(
     # The nickname template sent to this api endpoint for processing, defaults to {smart-name}
     template = template or DEFAULTS.get("nicknameTemplate") or ""
 
-    # Group placeholder values
-    group_data = roblox_user.get("groupsv2")
-
     if template == "{disable-nicknaming}":
         return None
 
@@ -90,6 +87,8 @@ async def parse_nickname(
                 smart_name = roblox_username
 
         # Handles {group-rank-<ID>}
+        group_data = roblox_user.get("groupsv2")
+
         for multi_group_id in any_group_nickname.findall(template):
             current_group = group_data.get(multi_group_id)
             multi_group_role = current_group.get("role").get("name") if current_group else "Guest"

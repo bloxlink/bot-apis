@@ -37,15 +37,14 @@ class Route:
 
                 return output
 
-            else:
-                age = roblox_user.get("age_days", 0)
-                if age < guild_data.ageLimit:
-                    output["is_restricted"] = True
-                    output["reason"] = f"User's account age is less than {guild_data.ageLimit} days old."
-                    output["action"] = "kick"
-                    output["source"] = "ageLimit"
+            age = roblox_user.get("age_days", 0)
+            if age < guild_data.ageLimit:
+                output["is_restricted"] = True
+                output["reason"] = f"User's account age is less than {guild_data.ageLimit} days old."
+                output["action"] = "kick"
+                output["source"] = "ageLimit"
 
-                    return output
+                return output
 
         if guild_data.groupLock:
             if not roblox_user:
@@ -154,6 +153,8 @@ class Route:
                         else:
                             output["failed"].append(bind)
 
+                        continue
+
                     if bind.subtype == "linked_group":
                         output["linked_group"].append(bind)
                         continue
@@ -257,19 +258,19 @@ class Route:
                 group_id=final_match[0].id if final_match[0].type == "group" else None,
                 roblox_user=roblox_user,
             )
-        else:
-            return await parse_nickname(
-                user_data={
-                    "name": member_data.get("name"),
-                    "nick": member_data.get("nick"),
-                    "id": member_data.get("id"),
-                },
-                template="",
-                is_nickname=True,
-                guild_id=guild_id,
-                guild_name=guild_name,
-                roblox_user=roblox_user,
-            )
+
+        return await parse_nickname(
+            user_data={
+                "name": member_data.get("name"),
+                "nick": member_data.get("nick"),
+                "id": member_data.get("id"),
+            },
+            template="",
+            is_nickname=True,
+            guild_id=guild_id,
+            guild_name=guild_name,
+            roblox_user=roblox_user,
+        )
 
     def get_custom_verification_roles(self, role_binds: list[GuildBind]) -> tuple[list, list]:
         """Get (non-criteria) bindings that are related to verification.
@@ -343,7 +344,7 @@ class Route:
 
         return verified_role, unverified_role
 
-    async def handler(self, request, guild_id, user_id):
+    async def handler(self, request, guild_id, _user_id):
         guild_id = str(guild_id)
 
         json_data: dict = request.json or {}

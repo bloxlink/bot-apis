@@ -39,8 +39,10 @@ class Route:
 
             age = roblox_user.get("age_days", 0)
             if age < guild_data.ageLimit:
+                roblox_name = roblox_user["name"]
+
                 output["is_restricted"] = True
-                output["reason"] = f"User's account age is less than {guild_data.ageLimit} days old."
+                output["reason"] = f"User's account ({roblox_name}) age is less than {guild_data.ageLimit} days old."  # fmt:skip
                 output["action"] = "kick"
                 output["source"] = "ageLimit"
 
@@ -60,6 +62,8 @@ class Route:
                 return output
 
             for group_id, group_data in guild_data.groupLock.items():
+                roblox_name = roblox_user["name"]
+
                 action = group_data.get("verifiedAction", "dm")
                 required_rolesets = group_data.get("roleSets")
 
@@ -70,7 +74,7 @@ class Route:
                 group_match = roblox_user.get("groupsv2", {}).get(group_id)
                 if group_match is None:
                     output["is_restricted"] = True
-                    output["reason"] = f"User is not in the group {group_id}.{dm_message}"
+                    output["reason"] = f"User ({roblox_name}) is not in the group {group_id}.{dm_message}"
                     output["action"] = action
                     output["source"] = "groupLock"
 
@@ -89,7 +93,7 @@ class Route:
                 else:
                     # no match was found - restrict the user.
                     output["is_restricted"] = True
-                    output["reason"] = f"User is not the required rank in the group {group_id}.{dm_message}"
+                    output["reason"] = f"User ({roblox_name}) is not the required rank in the group {group_id}.{dm_message}"  # fmt:skip
                     output["action"] = action
                     output["source"] = "groupLock"
 

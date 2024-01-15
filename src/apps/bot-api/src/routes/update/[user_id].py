@@ -344,7 +344,8 @@ class Route:
 
         return verified_role, unverified_role
 
-    async def handler(self, request, guild_id, _user_id):
+    # pylint: disable-next=unused-argument
+    async def handler(self, request, guild_id, user_id):
         guild_id = str(guild_id)
 
         json_data: dict = request.json or {}

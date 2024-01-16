@@ -309,42 +309,57 @@ class Route:
                 Will be None if not found.
                 Keys for the found roles will be "id", "name", and "managed".
         """
-        verified_role: str | None = None
-        unverified_role: str | None = None
+        verified_role: dict | None = None
+        unverified_role: dict | None = None
 
-        verified_role_name: str | None = (
-            None if guild_data.verifiedRole else guild_data.verifiedRoleName or "Verified"
-        )
-        unverified_role_name: str | None = (
-            None if guild_data.unverifiedRole else guild_data.unverifiedRoleName or "Unverified"
-        )
+        # fmt:off
+        verified_role_name: str | None = None if guild_data.verifiedRole else guild_data.verifiedRoleName or "Verified"
+        unverified_role_name: str | None = None if guild_data.unverifiedRole else guild_data.unverifiedRoleName or "Unverified"
+        # fmt:on
+
+        verified_role_id = str(guild_data.verifiedRole)
+        unverified_role_id = str(guild_data.unverifiedRole)
 
         for role in filter(lambda r: not r["managed"], guild["roles"]):
             role_name = role["name"]
             role_id = str(role["id"])
 
-            if role_name == verified_role_name or role_id == guild_data.verifiedRole:
+            if not verified_role and (role_name == verified_role_name or role_id == verified_role_id):
                 verified_role = role
 
-            if role_name == unverified_role_name or role_id == guild_data.unverifiedRole:
+            if not unverified_role and (role_name == unverified_role_name or role_id == unverified_role_id):
                 unverified_role = role
 
-        # TODO: TEST THIS.
-        # if verified_role and verified_role_name:
-        #     await update_guild_data(
-        #         str(guild_data.id), verifiedRole=verified_role["id"], verifiedRoleName=None
-        #     )
-        # if unverified_role and unverified_role_name:
-        #     await update_guild_data(
-        #         str(guild_data.id), unverifiedRole=unverified_role["id"], unverifiedRoleName=None
-        #     )
+        # Save the (un)verified role's ID & unset the role name option (only when a name is set).
+        if verified_role and verified_role_name:
+            await update_guild_data(
+                str(guild_data.id), verifiedRole=str(verified_role["id"]), verifiedRoleName=None
+            )
 
-        # No (un)verified role was found. Make one?
+        if unverified_role and unverified_role_name:
+            await update_guild_data(
+                str(guild_data.id), unverifiedRole=str(unverified_role["id"]), unverifiedRoleName=None
+            )
+
+        # No (un)verified role was found. Tell the code to make one + save name in db.
+        # Unset the existing ID if there is one, the role wasn't found so that means it was deleted
         if guild_data.verifiedRoleEnabled and not verified_role:
-            verified_role = {"name": verified_role_name}
+            verified_role = {"name": verified_role_name or "Verified"}
+
+            if verified_role_id:
+                await update_guild_data(
+                    str(guild_data.id),
+                    verifiedRole=None,
+                )
 
         if guild_data.unverifiedRoleEnabled and not unverified_role:
-            unverified_role = {"name": unverified_role_name}
+            unverified_role = {"name": unverified_role_name or "Unverified"}
+
+            if unverified_role_id:
+                await update_guild_data(
+                    str(guild_data.id),
+                    unverifiedRole=None,
+                )
 
         return verified_role, unverified_role
 

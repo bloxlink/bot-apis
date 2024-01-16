@@ -17,6 +17,29 @@ class Route:
     NAME = "guild_update_user"
 
     def calculate_restrictions(self, guild_data: GuildData, roblox_user: dict) -> dict:
+        """Check the restrictions in the guild against this roblox_user.
+
+        This does not check for banEvaders or alt accounts. It will, however, include
+        that in the output in the "unevaluated" field.
+
+        #### Args:
+            guild_data (GuildData): Settings for the guild.
+            roblox_user (dict): The roblox user data we are checking restrictions against.
+
+        #### Returns:
+            dict: The result from the restriction checks.
+
+            Example: {
+                "unevaluated": [],
+                "is_restricted": True,
+                "reason": "Reason for being restricted",
+                "action": "Action to take against the user",
+                "source": "Source for the restriction, aka the setting that matched"
+            }
+
+            The reason, action, and source keys are only included if is_restricted is True.
+            Unevaluated at this time will only ever contain disallowBanEvaders and disallowAlts.
+        """
         output = {
             "unevaluated": [],
             "is_restricted": False,
@@ -102,6 +125,31 @@ class Route:
         return output
 
     async def calculate_verification_roles(self, guild_data: GuildData, discord_guild: dict) -> dict:
+        """Determine what verification roles to use, between the default or custom binds.
+
+        Verification roles consist of both the unverified + verified roles.
+
+        #### Args:
+            guild_data (GuildData): Settings for the guild.
+            discord_guild (dict): Discord data of the guild.
+
+        #### Returns:
+            dict: The found verified & unverified roles (if they exist).
+
+            Example: {
+                "verified": {},
+                "unverified": {},
+                "custom_verified": False,
+                "custom_unverified": False,
+                "missing_verified": False,
+                "missing_unverified": False,
+            }
+
+            Verified & unverified keys can either be a dict (default role) or a list (custom roles).\n
+            Use custom_(un)verified entries to determine if it should be handled as a dict or list.\n
+            The missing_* keys are used to determine if the role needs to be created (for default verified/
+            unverified roles only)
+        """
         output = {
             "verified": None,
             "unverified": None,
@@ -135,6 +183,30 @@ class Route:
         return output
 
     async def calculate_binds(self, guild_data: GuildData, roblox_user: dict) -> dict:
+        """Determine what binds apply to this roblox_user.
+
+        This does not include custom verification role binds (at the top level). Those are handled
+        in calculate_verification_roles.
+
+        #### Args:
+            guild_data (GuildData): Settings for the guild.
+            roblox_user (dict): Roblox data of the user verifying.
+
+        #### Returns:
+            dict: Which binds could be successfully given, which binds cannot, and linked groups to check.
+
+            Structure: {
+                "successful": [],
+                "failed": [],
+                "linked_group": []
+            }
+
+            Bindings will be represented as their GuildBind/GroupBind.
+
+            Linked groups are put in their own section so other functions can evaluate it later & determine
+            which roles correspond to the group ranks. Only successful linked groups are added to the
+            linked_group list.
+        """
         # Remove TOP LEVEL verified/unverified bindings bc we get that in the verification section.
         binds = [bind for bind in guild_data.binds if bind.type not in ("verified", "unverified")]
         output = {"successful": [], "failed": [], "linked_group": []}
@@ -298,7 +370,7 @@ class Route:
 
         This does not consider binds nested in criteria as a custom role.
 
-        Args:
+        #### Args:
             role_binds (list[GuildBind]): The bindings in the guild
         """
         verified_binds = []
@@ -315,10 +387,10 @@ class Route:
     async def get_default_verification_roles(self, guild: dict, guild_data: GuildData) -> tuple[dict, dict]:
         """Get the non-custom unverified & verified roles in the given guild.
 
-        Args:
+        #### Args:
             guild (dict): Guild data as a dict, needs an "id" and the "roles" list keys at a minimum.
 
-        Returns:
+        #### Returns:
             tuple[dict, dict]: The found (verified, unverified) roles.
                 Will be None if not found.
                 Keys for the found roles will be "id", "name", and "managed".
@@ -379,6 +451,7 @@ class Route:
 
     # pylint: disable-next=unused-argument
     async def handler(self, request, guild_id, user_id):
+        """Entry point for the /update/guild_id/user_id endpoint"""
         guild_id = str(guild_id)
 
         json_data: dict = request.json or {}

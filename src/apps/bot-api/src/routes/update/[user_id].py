@@ -215,12 +215,26 @@ class Route:
         roblox_user: dict,
         member_data: dict,
         bindings: list[GuildBind],
-        roles_applied: list[str] = None,
+        final_roles: list[str] = None,
     ) -> str:
+        """Determine which nickname should be given to this user.
+
+        #### Args:
+            discord_guild (dict): Discord data of this guild.
+            roblox_user (dict): Roblox user data of the user verifying.
+            member_data (dict): Guild member data of the user verifying.
+            bindings (list[GuildBind]): The bindings of this guild (that apply to the user -
+                aka successful bindings).
+            final_roles (list[str], optional): All the roles the user will end up with. Defaults to None.
+                Used for determining the linked group nickname template to apply.
+
+        #### Returns:
+            str: The resulting nickname to give to the user.
+        """
         guild_id = discord_guild["id"]
         guild_name = discord_guild.get("name")
         guild_roles = discord_guild.get("roles")
-        roles_applied = roles_applied or []
+        final_roles = final_roles or []
 
         nickname_to_role = []
         for bind in bindings:
@@ -229,7 +243,7 @@ class Route:
                     group = RobloxGroup(bind.id)
                     rank_mappings = await group.rolesets_to_roles(discord_guild.get("roles", []))
 
-                    for role in roles_applied:
+                    for role in final_roles:
                         if role in rank_mappings.values():
                             role = next((x for x in guild_roles if role == str(x["id"])), None)
                             nickname_to_role.append((bind, role))
@@ -493,7 +507,7 @@ class Route:
             roblox_user=roblox_account if not is_restricted else {},
             member_data=member,
             bindings=applicable_binds,
-            roles_applied=final_response["roles"]["added"],
+            final_roles=final_response["roles"]["final"],
         )
 
         return json({"success": True, **final_response})

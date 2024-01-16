@@ -152,7 +152,7 @@ class Route:
                     user_group: dict | None = roblox_user.get("groupsv2", {}).get(str(bind.id))
 
                     if not user_group:
-                        if bind.guest:
+                        if bind.guest or bind.roleset == 0:
                             output["successful"].append(bind)
                         else:
                             output["failed"].append(bind)

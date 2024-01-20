@@ -16,114 +16,6 @@ class Route:
     METHODS = ("POST",)
     NAME = "guild_update_user"
 
-    def calculate_restrictions(self, guild_data: GuildData, roblox_user: dict) -> dict:
-        """Check the restrictions in the guild against this roblox_user.
-
-        This does not check for banEvaders or alt accounts. It will, however, include
-        that in the output in the "unevaluated" field.
-
-        #### Args:
-            guild_data (GuildData): Settings for the guild.
-            roblox_user (dict): The roblox user data we are checking restrictions against.
-
-        #### Returns:
-            dict: The result from the restriction checks.
-
-            Example: {
-                "unevaluated": [],
-                "is_restricted": True,
-                "reason": "Reason for being restricted",
-                "action": "Action to take against the user",
-                "source": "Source for the restriction, aka the setting that matched"
-            }
-
-            The reason, action, and source keys are only included if is_restricted is True.
-            Unevaluated at this time will only ever contain disallowBanEvaders and disallowAlts.
-        """
-        output = {
-            "unevaluated": [],
-            "is_restricted": False,
-        }
-
-        if guild_data.disallowBanEvaders and roblox_user:
-            output["unevaluated"].append("disallowBanEvaders")
-
-        if guild_data.disallowAlts and roblox_user:
-            output["unevaluated"].append("disallowAlts")
-
-        if guild_data.ageLimit:
-            if not roblox_user:
-                output["is_restricted"] = True
-                output["reason"] = "User is not verified with Bloxlink."
-                output["action"] = "kick"
-                output["source"] = "ageLimit"
-
-                return output
-
-            age = roblox_user.get("age_days", 0)
-            if age < guild_data.ageLimit:
-                roblox_name = roblox_user["name"]
-
-                output["is_restricted"] = True
-                output["reason"] = f"User's account ({roblox_name}) age is less than {guild_data.ageLimit} days old."  # fmt:skip
-                output["action"] = "kick"
-                output["source"] = "ageLimit"
-
-                return output
-
-        if guild_data.groupLock:
-            if not roblox_user:
-                kick_unverified = any(
-                    g.get("unverifiedAction", "kick") == "kick" for g in guild_data.groupLock.values()
-                )
-
-                output["is_restricted"] = True
-                output["reason"] = "User is not verified with Bloxlink."
-                output["action"] = "kick" if kick_unverified else "dm"
-                output["source"] = "groupLock"
-
-                return output
-
-            for group_id, group_data in guild_data.groupLock.items():
-                roblox_name = roblox_user["name"]
-
-                action = group_data.get("verifiedAction", "dm")
-                required_rolesets = group_data.get("roleSets")
-
-                dm_message = group_data.get("dmMessage") or ""
-                if dm_message:
-                    dm_message = f"\n\n**The following text is from the server admins:**\n> {dm_message}"
-
-                group_match = roblox_user.get("groupsv2", {}).get(group_id)
-                if group_match is None:
-                    output["is_restricted"] = True
-                    output["reason"] = f"User ({roblox_name}) is not in the group {group_id}.{dm_message}"
-                    output["action"] = action
-                    output["source"] = "groupLock"
-
-                    return output
-
-                user_roleset = group_match["role"].get("rank")
-                for roleset in required_rolesets:
-                    if isinstance(roleset, list):
-                        # within range
-                        if roleset[0] <= user_roleset <= roleset[1]:
-                            break
-                    else:
-                        # exact match (x) or inverse match (rolesets above x)
-                        if (user_roleset == roleset) or (roleset < 0 and abs(roleset) <= user_roleset):
-                            break
-                else:
-                    # no match was found - restrict the user.
-                    output["is_restricted"] = True
-                    output["reason"] = f"User ({roblox_name}) is not the required rank in the group {group_id}.{dm_message}"  # fmt:skip
-                    output["action"] = action
-                    output["source"] = "groupLock"
-
-                    return output
-
-        return output
-
     async def calculate_verification_roles(self, guild_data: GuildData, discord_guild: dict) -> dict:
         """Determine what verification roles to use, between the default or custom binds.
 
@@ -319,6 +211,7 @@ class Route:
                         if role in rank_mappings.values():
                             role = next((x for x in guild_roles if role == str(x["id"])), None)
                             nickname_to_role.append((bind, role))
+
                     continue
 
             if bind.nickname and bind.roles:
@@ -484,12 +377,9 @@ class Route:
                 "removed": [],
                 "missing": [],
             },
-            "restrictions": {},
         }
 
-        restrict_data = self.calculate_restrictions(guild_data=guild_data, roblox_user=roblox_account)
-        final_response["restrictions"] = restrict_data
-        is_restricted = restrict_data["is_restricted"]
+        is_restricted = json_data.get("is_restricted", False)
 
         verified_data = await self.calculate_verification_roles(guild_data=guild_data, discord_guild=guild)
 

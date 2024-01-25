@@ -65,10 +65,9 @@ class Route:
 
         guild_id: str = json_data.get("guild_id")
         guild_roles: list = json_data.get("guild_roles")
-        if not guild_id:
-            return json({"success": False, "reason": "No guild_id was given."})
-        if not guild_roles:
-            return json({"success": False, "reason": "No guild_roles were given."})
+
+        if not (guild_id and guild_roles):
+            return json({"success": False, "reason": "No guild_id or guild_roles was given."})
 
         response = await calculate_final_roles(json_data, guild_id, guild_roles)
 
@@ -80,7 +79,8 @@ async def calculate_final_roles(data: dict, guild_id: str, guild_roles: list) ->
     final_roles = set(str(x) for x in final_roles)
     original_roles: set = copy.copy(final_roles)
 
-    successful_binds: dict = data.get("successful_binds", {"give": [], "remove": []})
+    successful_binds: dict = data.get(
+        "successful_binds", {"give": [], "remove": []})
 
     guild_data: GuildData = await fetch_guild_data(guild_id, "allowOldRoles")
     guild_data.binds = await get_binds(guild_id)
@@ -98,10 +98,12 @@ async def calculate_final_roles(data: dict, guild_id: str, guild_roles: list) ->
                 group = RobloxGroup(bind.id)
                 matched_roles = await group.rolesets_to_roles(guild_roles)
 
-                linked_group_roles.update([str(value) for value in matched_roles.values()])
+                linked_group_roles.update([str(value)
+                                          for value in matched_roles.values()])
 
         if bind.roles:
             bind_related_roles.update(str(x) for x in bind.roles)
+
         if bind.removeRoles:
             bind_related_roles.update(str(x) for x in bind.removeRoles)
 

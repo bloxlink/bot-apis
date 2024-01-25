@@ -61,7 +61,8 @@ class Route:
                 roblox_name = roblox_user["name"]
 
                 output["is_restricted"] = True
-                output["reason"] = f"User's account ({roblox_name}) age is less than {guild_data.ageLimit} days old."  # fmt:skip
+                # fmt:skip
+                output["reason"] = f"User's account ({roblox_name}) age is less than {guild_data.ageLimit} days old."
                 output["action"] = "kick"
                 output["source"] = "ageLimit"
 
@@ -112,7 +113,8 @@ class Route:
                 else:
                     # no match was found - restrict the user.
                     output["is_restricted"] = True
-                    output["reason"] = f"User ({roblox_name}) is not the required rank in the group {group_id}.{dm_message}"  # fmt:skip
+                    # fmt:skip
+                    output["reason"] = f"User ({roblox_name}) is not the required rank in the group {group_id}.{dm_message}"
                     output["action"] = action
                     output["source"] = "groupLock"
 
@@ -128,7 +130,6 @@ class Route:
         guild_id = str(guild_id)
 
         json_data: dict = request.json or {}
-
         roblox_account = json_data.get("roblox_account")
 
         guild_data: GuildData = await fetch_guild_data(
@@ -141,6 +142,7 @@ class Route:
         # Call get_binds so we can get the converted bind format (if those weren't converted prior.)
         guild_data.binds = await get_binds(guild_id)
 
-        restrict_data = self.calculate_restrictions(guild_data=guild_data, roblox_user=roblox_account)
+        restrict_data = self.calculate_restrictions(
+            guild_data=guild_data, roblox_user=roblox_account)
 
         return json({"success": True, **restrict_data})

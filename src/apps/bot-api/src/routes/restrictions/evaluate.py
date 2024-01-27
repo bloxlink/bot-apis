@@ -39,13 +39,17 @@ class Route:
         output = {
             "unevaluated": [],
             "is_restricted": False,
+            "reason": None,
+            "action": None,
+            "source": None,
         }
 
-        if guild_data.disallowBanEvaders and roblox_user:
-            output["unevaluated"].append("disallowBanEvaders")
+        if roblox_user:
+            if guild_data.disallowBanEvaders:
+                output["unevaluated"].append("disallowBanEvaders")
 
-        if guild_data.disallowAlts and roblox_user:
-            output["unevaluated"].append("disallowAlts")
+            if guild_data.disallowAlts:
+                output["unevaluated"].append("disallowAlts")
 
         if guild_data.ageLimit:
             if not roblox_user:
@@ -62,7 +66,8 @@ class Route:
 
                 output["is_restricted"] = True
                 # fmt:skip
-                output["reason"] = f"User's account ({roblox_name}) age is less than {guild_data.ageLimit} days old."
+                output["reason"] = f"User's account ({roblox_name}) age is less than" \
+                    f"{guild_data.ageLimit} days old."
                 output["action"] = "kick"
                 output["source"] = "ageLimit"
 
@@ -89,12 +94,14 @@ class Route:
 
                 dm_message = group_data.get("dmMessage") or ""
                 if dm_message:
-                    dm_message = f"\n\n**The following text is from the server admins:**\n> {dm_message}"
+                    dm_message = f"\n\n**The following text is from the server admins:**" \
+                        f"\n>{dm_message} "
 
                 group_match = roblox_user.get("groupsv2", {}).get(group_id)
                 if group_match is None:
                     output["is_restricted"] = True
-                    output["reason"] = f"User ({roblox_name}) is not in the group {group_id}.{dm_message}"
+                    output["reason"] = f"User ({roblox_name}) is not in the group " \
+                        f"{group_id}.{dm_message}"
                     output["action"] = action
                     output["source"] = "groupLock"
 
@@ -114,7 +121,8 @@ class Route:
                     # no match was found - restrict the user.
                     output["is_restricted"] = True
                     # fmt:skip
-                    output["reason"] = f"User ({roblox_name}) is not the required rank in the group {group_id}.{dm_message}"
+                    output["reason"] = f"User ({roblox_name}) is not the required rank in the group " \
+                        f"{group_id}.{dm_message}"
                     output["action"] = action
                     output["source"] = "groupLock"
 

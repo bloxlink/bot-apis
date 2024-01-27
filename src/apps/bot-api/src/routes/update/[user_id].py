@@ -54,10 +54,12 @@ class Route:
         default_verified, default_unverified = await self.get_default_verification_roles(
             discord_guild, guild_data
         )
-        custom_verified, custom_unverified = self.get_custom_verification_roles(guild_data.binds)
+        custom_verified, custom_unverified = self.get_custom_verification_roles(
+            guild_data.binds)
 
         if not custom_verified:
             output["verified"] = default_verified
+
             if not default_verified.get("id"):
                 output["missing_verified"] = True
         else:
@@ -66,6 +68,7 @@ class Route:
 
         if not custom_unverified:
             output["unverified"] = default_unverified
+
             if not default_unverified.get("id"):
                 output["missing_unverified"] = True
         else:
@@ -100,7 +103,8 @@ class Route:
             linked_group list.
         """
         # Remove TOP LEVEL verified/unverified bindings bc we get that in the verification section.
-        binds = [bind for bind in guild_data.binds if bind.type not in ("verified", "unverified")]
+        binds = [bind for bind in guild_data.binds if bind.type not in (
+            "verified", "unverified")]
         output = {"successful": [], "failed": [], "linked_group": []}
 
         for bind in binds:
@@ -113,7 +117,8 @@ class Route:
             match bind.type:
                 case "group":
                     bind: GroupBind
-                    user_group: dict | None = roblox_user.get("groupsv2", {}).get(str(bind.id))
+                    user_group: dict | None = roblox_user.get(
+                        "groupsv2", {}).get(str(bind.id))
 
                     if not user_group:
                         if bind.guest or bind.roleset == 0:
@@ -209,14 +214,16 @@ class Route:
 
                     for role in final_roles:
                         if role in rank_mappings.values():
-                            role = next((x for x in guild_roles if role == str(x["id"])), None)
+                            role = next(
+                                (x for x in guild_roles if role == str(x["id"])), None)
                             nickname_to_role.append((bind, role))
 
                     continue
 
             if bind.nickname and bind.roles:
                 for role in bind.roles:
-                    role = next((x for x in guild_roles if role == str(x["id"])), None)
+                    role = next(
+                        (x for x in guild_roles if role == str(x["id"])), None)
                     nickname_to_role.append((bind, role))
 
         final_match = sorted(
@@ -371,12 +378,10 @@ class Route:
 
         final_response = {
             "nickname": None,
-            "roles": {
-                "final": [],
-                "added": [],
-                "removed": [],
-                "missing": [],
-            },
+            "addedRoles": [],
+            "removedRoles": [],
+            "missingRoles": [],
+            "finalRoles": [],
         }
 
         is_restricted = json_data.get("is_restricted", False)
@@ -402,7 +407,8 @@ class Route:
             else:
                 if guild_data.unverifiedRoleEnabled:
                     if verified_data["missing_unverified"]:
-                        final_response["roles"]["missing"].append(verified_data["unverified"]["name"])
+                        final_response["missingRoles"].append(
+                            verified_data["unverified"]["name"])
                     else:
                         give_roles.append(verified_data["unverified"]["id"])
 
@@ -417,7 +423,8 @@ class Route:
             else:
                 if guild_data.verifiedRoleEnabled:
                     if verified_data["missing_verified"]:
-                        final_response["roles"]["missing"].append(verified_data["verified"]["name"])
+                        final_response["missingRoles"].append(
+                            verified_data["verified"]["name"])
                     else:
                         give_roles.append(verified_data["verified"]["id"])
 
@@ -438,11 +445,12 @@ class Route:
                 group = RobloxGroup(eg_bind.id)
                 rank_mappings = await group.rolesets_to_roles(guild.get("roles", []))
 
-                user_group: dict = roblox_account.get("groupsv2", {}).get(str(eg_bind.id))
+                user_group: dict = roblox_account.get(
+                    "groupsv2", {}).get(str(eg_bind.id))
                 user_rank = user_group["role"]["name"]
                 if not rank_mappings.get(user_rank):
-                    if user_rank not in final_response["roles"]["missing"]:
-                        final_response["roles"]["missing"].append(user_rank)
+                    if user_rank not in final_response["missingRoles"]:
+                        final_response["missingRoles"].append(user_rank)
                 else:
                     give_roles.append(rank_mappings.get(user_rank))
 
@@ -461,16 +469,16 @@ class Route:
             guild_roles=guild["roles"],
         )
 
-        final_response["roles"]["final"] = user_role_data["final_roles"]
-        final_response["roles"]["added"] = user_role_data["added_roles"]
-        final_response["roles"]["removed"] = user_role_data["removed_roles"]
+        final_response["finalRoles"] = user_role_data["final_roles"]
+        final_response["addedRoles"] = user_role_data["added_roles"]
+        final_response["removedRoles"] = user_role_data["removed_roles"]
 
         final_response["nickname"] = await self.calculate_nickname(
             discord_guild=guild,
             roblox_user=roblox_account if not is_restricted else {},
             member_data=member,
             bindings=applicable_binds,
-            final_roles=final_response["roles"]["final"],
+            final_roles=user_role_data["final_roles"],
         )
 
         return json({"success": True, **final_response})

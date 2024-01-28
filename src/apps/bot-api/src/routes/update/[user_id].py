@@ -356,7 +356,7 @@ class Route:
 
         json_data: dict = request.json or {}
 
-        guild: dict = json_data.get("guild")
+        roles: dict = json_data.get("roles")
         roblox_account = json_data.get("roblox_account")
         member: dict = json_data.get("member")
 

@@ -1,9 +1,10 @@
 import subprocess
 import signal
+import sys
 
 APPS = {
     "roblox-info-server": "python3.10 src/main.py",
-    "bot-api": "python3.10 src/main.py",
+    "bot-api": "poetry run python src/main.py",
     "discord-gateway-relay": "python3.10 src/main.py"
 }
 
@@ -11,13 +12,16 @@ APPS = {
 GREEN_START = "\033[0;32m"
 COLOR_END = "\033[0m"
 
-processes = []
+processes: dict[str, subprocess.Popen] = {}
 
 
 def terminate_processes(signal, frame):
-    for process in processes:
+    """Terminate all processes and exit with code 0"""
+
+    for process in processes.values():
         process.terminate()
-    exit(0)
+
+    sys.exit(0)
 
 
 # Register a signal handler to capture termination signal (SIGINT)
@@ -33,24 +37,25 @@ for app_name, app_run_command in APPS.items():
         stderr=subprocess.PIPE,
         universal_newlines=True
     )
-    processes.append(process)
+    processes[app_name] = process
 
 # Continuously check and print errors if any
 while processes:
-    for process in processes:
-        retcode = process.poll()
-        if retcode is not None:
+    for app_name, process in dict(processes).items():
+        return_code = process.poll()
+
+        if return_code is not None:
             stdout, stderr = process.communicate()
-            if retcode != 0:
+
+            if return_code != 0:
                 print(f"Error occurred in {app_name}:")
-                print("Standard Output:")
-                print(stdout)
-                print("Standard Error:")
-                print(stderr)
+                print(f"Standard Output: {stdout}")
+                print(f"Standard Error: {stderr}")
             else:
                 print(f"{app_name} completed successfully.")
-            processes.remove(process)
+
+            del processes[app_name]
 
 # Ensure all processes are terminated before exiting
-for process in processes:
+for process in processes.values():
     process.terminate()

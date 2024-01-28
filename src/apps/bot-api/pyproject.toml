@@ -7,16 +7,15 @@ license = "AGPL 3.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10,<3.13"
 sanic = "22.12.0"
-aiohttp = "3.8.5"
 motor = "2.5.1"
 hiredis = "^2.2.3"
 redis = "~4.2"
 requests = "^2.31.0"
 websockets = "<11.0"
 pymongo = { version = "3.12", extras = ["srv"] }
-attrs = "23.1.0"
+hikari = {git = "https://github.com/hikari-py/hikari.git", rev = "refs/pull/1803/merge"}
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"

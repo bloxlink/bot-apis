@@ -15,8 +15,9 @@ essentials-configuration = "^2.0.4"
 markupsafe = "^2.1.4"
 pydantic = "^2.5.3"
 rich = "^13.7.0"
-bot-models = {git = "https://github.com/bloxlink/bot-models"}
+bot-utils = {git = "https://github.com/bloxlink/bot-models"}
 attrs = "^23.2.0"
+python-dotenv = "^1.0.1"
 
 
 [build-system]

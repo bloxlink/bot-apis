@@ -5,9 +5,8 @@ from typing import Optional
 
 from blacksheep.server.controllers import Controller, post
 from blacksheep import FromJSON
-from dataclasses import dataclass
-from bot_models import Role, RobloxUser
-from hikari import Member
+from bot_utils import RobloxUser
+from hikari import Member, Role
 from attrs import define
 
 

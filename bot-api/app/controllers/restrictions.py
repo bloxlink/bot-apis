@@ -48,9 +48,6 @@ class BindsController(Controller):
         roblox_user = data.roblox_user
         member = data.member
 
-        print(data)
-
-
         # Call get_binds so we can get the converted bind format (if those weren't converted prior.)
         # guild_data.binds = await get_binds(guild_id)
 

@@ -6,7 +6,7 @@ from typing import Optional
 
 from blacksheep.server.controllers import Controller, post
 from blacksheep import FromJSON
-from bot_utils import RobloxUser, MemberSerializable
+from bloxlink_lib import RobloxUser, MemberSerializable
 from attrs import define
 from ..models import Response
 from ..lib.restrictions import calculate_restrictions

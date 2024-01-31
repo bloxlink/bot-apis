@@ -1,14 +1,17 @@
 """
 Endpoint for bind related endpoints
 """
+
 from typing import Optional
 
 from blacksheep.server.controllers import Controller, post
 from blacksheep import FromJSON
-from bot_utils import RobloxUser, MemberSerializable
+from bloxlink_lib import RobloxUser, MemberSerializable, RoleSerializable
+from bloxlink_lib.database import fetch_guild_data
 from hikari import Member, Role
 from attrs import define
 from ..models import Response
+from ..lib.binds import filter_binds
 
 
 @define()
@@ -22,15 +25,16 @@ class UpdateUserPayload:
 
         self.roblox_user = RobloxUser(**self.roblox_user) if self.roblox_user else None
         self.member = MemberSerializable(**self.member) if self.member else None
+        self.roles = {role_id: RoleSerializable(**role) for role_id, role in self.roles.items()}
 
 
 class BindCalculationResponse(Response):
-    nickname: str | None
+    nickname: str | None # nickname to set
 
-    finalRoles: list[str]
-    addedRoles: list[str]
-    removedRoles: list[str]
-    missingRoles: list[str]
+    finalRoles: list[str] # final roles the user will have
+    addRoles: list[str] # add these roles
+    removeRoles: list[str] # remove these roles
+    missingRoles: list[str] # missing roles, created by bot
 
 
 class BindsController(Controller):
@@ -45,7 +49,7 @@ class BindsController(Controller):
     @post("/:guild_id/:user_id")
     async def calculate_binds_for_user(self, guild_id: int, user_id: int, input: FromJSON[UpdateUserPayload]) -> BindCalculationResponse:
         """
-        Calculates the restrictions for the user, if any.
+        Calculates the binds for the user.
         """
 
         data = input.value
@@ -53,16 +57,35 @@ class BindsController(Controller):
         member = data.member
         roles = data.roles
 
-        # # Call get_binds so we can get the converted bind format (if those weren't converted prior.)
-        # # guild_data.binds = await get_binds(guild_id)
-
-        # restrict_data = await calculate_restrictions(guild_id=guild_id, roblox_user=roblox_user)
-
-        return BindCalculationResponse(
+        bound_roles = BindCalculationResponse(
             success=True,
-            nickname="ok",
+            nickname=None,
             finalRoles=[],
-            addedRoles=[],
-            removedRoles=[],
+            addRoles=[],
+            removeRoles=[],
             missingRoles=[]
         )
+
+        guild_data = await fetch_guild_data(
+            guild_id,
+            "binds",
+            "allowOldRoles",
+            "verifiedRoleEnabled",
+            "verifiedRoleName",
+            "unverifiedRoleEnabled",
+            "unverifiedRoleName",
+            "ageLimit",
+            "disallowAlts",
+            "disallowBanEvaders",
+            "groupLock",
+        )
+
+        potential_binds, remove_roles = await filter_binds(guild_data.binds, roblox_user, member, roles)
+
+        bound_roles["removeRoles"] = remove_roles
+        bound_roles["addRoles"] = [role_id for bind in potential_binds for role_id in bind.roles]
+
+        print("potential binds", potential_binds)
+        print("remove roles", remove_roles)
+
+        return bound_roles

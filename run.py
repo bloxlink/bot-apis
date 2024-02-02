@@ -4,7 +4,7 @@ import sys
 
 APPS = {
     "roblox-info-server": "python3.10 src/main.py",
-    "bot-api": "poetry run python src/main.py",
+    # "bot-api": "poetry run python src/main.py",
     "discord-gateway-relay": "python3.10 src/main.py"
 }
 

@@ -6,26 +6,23 @@ from typing import Optional
 
 from blacksheep.server.controllers import Controller, post
 from blacksheep import FromJSON
-from bloxlink_lib import RobloxUser, MemberSerializable, RoleSerializable
+from bloxlink_lib import RobloxUser, MemberSerializable, RoleSerializable, BaseModel
 from bloxlink_lib.database import fetch_guild_data
-from hikari import Member, Role
-from attrs import define
 from ..models import Response
 from ..lib.binds import filter_binds
 
 
-@define()
-class UpdateUserPayload:
-    roles: dict[int, Role]
-    roblox_user: RobloxUser
-    member: Member
+class UpdateUserPayload(BaseModel):
+    guild_roles: dict[int, RoleSerializable]
+    roblox_user: RobloxUser | None
+    member: MemberSerializable
 
-    def __attrs_post_init__(self):
-        # blacksheep isn't casting the nested fields to the correct types
+    # def __attrs_post_init__(self):
+    #     # blacksheep isn't casting the nested fields to the correct types
 
-        self.roblox_user = RobloxUser(**self.roblox_user) if self.roblox_user else None
-        self.member = MemberSerializable(**self.member) if self.member else None
-        self.roles = {role_id: RoleSerializable(**role) for role_id, role in self.roles.items()}
+    #     self.roblox_user = RobloxUser(**self.roblox_user) if self.roblox_user else None
+    #     self.member = MemberSerializable(**self.member) if self.member else None
+    #     self.roles = {role_id: RoleSerializable(**role) for role_id, role in self.roles.items()}
 
 
 class BindCalculationResponse(Response):
@@ -48,14 +45,12 @@ class BindsController(Controller):
 
     @post("/:guild_id/:user_id")
     async def calculate_binds_for_user(self, guild_id: int, user_id: int, input: FromJSON[UpdateUserPayload]) -> BindCalculationResponse:
-        """
-        Calculates the binds for the user.
-        """
+        """Calculates the binds for the user."""
 
         data = input.value
         roblox_user = data.roblox_user
         member = data.member
-        roles = data.roles
+        guild_roles = data.guild_roles
 
         bound_roles = BindCalculationResponse(
             success=True,
@@ -80,10 +75,13 @@ class BindsController(Controller):
             "groupLock",
         )
 
-        potential_binds, remove_roles = await filter_binds(guild_data.binds, roblox_user, member, roles)
+        potential_binds, remove_roles, missing_roles = await filter_binds(guild_data.binds, roblox_user, member, guild_roles)
 
-        bound_roles["removeRoles"] = remove_roles
+        if not guild_data.allowOldRoles:
+            bound_roles["removeRoles"] = remove_roles
+
         bound_roles["addRoles"] = [role_id for bind in potential_binds for role_id in bind.roles]
+        bound_roles["missingRoles"] = missing_roles
 
         print("potential binds", potential_binds)
         print("remove roles", remove_roles)

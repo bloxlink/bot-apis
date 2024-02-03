@@ -7,7 +7,6 @@ from typing import Optional
 from blacksheep.server.controllers import Controller, post
 from blacksheep import FromJSON
 from bloxlink_lib import RobloxUser, MemberSerializable, BaseModel
-from attrs import define
 from pydantic import Field
 from ..models import Response
 from ..lib.restrictions import calculate_restrictions
@@ -16,15 +15,6 @@ from ..lib.restrictions import calculate_restrictions
 class RestrictionPayload(BaseModel):
     roblox_user: RobloxUser = Field(default=None)
     member: MemberSerializable
-
-    # def __attrs_post_init__(self):
-    #     # blacksheep isn't casting the nested fields to the correct types
-
-    #     print(self.roblox_user)
-
-    #     self.roblox_user = RobloxUser(**self.roblox_user) if self.roblox_user else None
-    #     print("worked")
-    #     self.member = MemberSerializable(**self.member) if self.member else None
 
 
 class RestrictionResponse(Response):

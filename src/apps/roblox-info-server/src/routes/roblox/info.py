@@ -76,7 +76,7 @@ class Route:
                 data["groups"] = {}
 
                 for group_data in json:
-                    data["groups"][str(group_data["group"]["id"])] = group_data
+                    data["groups"][int(group_data["group"]["id"])] = group_data
 
             async def use_avatars():
                 for avatar_name, avatar_url in AVATAR_URLS.items():

@@ -17,13 +17,6 @@ class UpdateUserPayload(BaseModel):
     roblox_user: RobloxUser | None
     member: MemberSerializable
 
-    # def __attrs_post_init__(self):
-    #     # blacksheep isn't casting the nested fields to the correct types
-
-    #     self.roblox_user = RobloxUser(**self.roblox_user) if self.roblox_user else None
-    #     self.member = MemberSerializable(**self.member) if self.member else None
-    #     self.roles = {role_id: RoleSerializable(**role) for role_id, role in self.roles.items()}
-
 
 class BindCalculationResponse(Response):
     nickname: str | None # nickname to set
@@ -69,10 +62,6 @@ class BindsController(Controller):
             "verifiedRoleName",
             "unverifiedRoleEnabled",
             "unverifiedRoleName",
-            "ageLimit",
-            "disallowAlts",
-            "disallowBanEvaders",
-            "groupLock",
         )
 
         potential_binds, remove_roles, missing_roles = await filter_binds(guild_data.binds, roblox_user, member, guild_roles)

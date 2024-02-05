@@ -13,7 +13,7 @@ from ..lib.restrictions import calculate_restrictions
 
 
 class RestrictionPayload(BaseModel):
-    roblox_user: RobloxUser = Field(default=None)
+    roblox_user: RobloxUser | None = Field(default=None)
     member: MemberSerializable
 
 

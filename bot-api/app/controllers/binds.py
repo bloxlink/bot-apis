@@ -60,13 +60,9 @@ class BindsController(Controller):
             guild_id,
             "binds",
             "allowOldRoles",
-            "verifiedRoleEnabled",
-            "verifiedRoleName",
-            "unverifiedRoleEnabled",
-            "unverifiedRoleName",
         )
 
-        potential_binds, remove_roles, missing_roles = await filter_binds(guild_data.binds, roblox_user, member, guild_roles)
+        potential_binds, remove_roles, missing_roles = await filter_binds(guild_id, guild_data.binds, roblox_user, member, guild_roles)
         nickname = await parse_template(
             guild_id=guild_id,
             guild_name=guild_name,
@@ -81,8 +77,5 @@ class BindsController(Controller):
         bound_roles["addRoles"] = [role_id for bind in potential_binds for role_id in bind.roles]
         bound_roles["missingRoles"] = missing_roles
         bound_roles["nickname"] = nickname
-
-        print("potential binds", potential_binds)
-        print("remove roles", remove_roles)
 
         return bound_roles

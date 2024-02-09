@@ -22,8 +22,8 @@ class UpdateUserPayload(BaseModel):
 class BindCalculationResponse(Response):
     nickname: str | None # nickname to set
 
-    addRoles: list[str] # add these roles
-    removeRoles: list[str] # remove these roles
+    addRoles: list[int] # add these roles
+    removeRoles: list[int] # remove these roles
     missingRoles: list[str] # missing roles, created by bot
 
 
@@ -70,9 +70,9 @@ class BindsController(Controller):
         )
 
         if not guild_data.allowOldRoles:
-            bound_roles["removeRoles"] = remove_roles
+            bound_roles["removeRoles"] = list(map(int, remove_roles))
 
-        bound_roles["addRoles"] = [role_id for bind in potential_binds for role_id in bind.roles]
+        bound_roles["addRoles"] = [int(role_id) for bind in potential_binds for role_id in bind.roles]
         bound_roles["missingRoles"] = missing_roles
         bound_roles["nickname"] = nickname
 

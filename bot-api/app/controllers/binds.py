@@ -22,7 +22,6 @@ class UpdateUserPayload(BaseModel):
 class BindCalculationResponse(Response):
     nickname: str | None # nickname to set
 
-    finalRoles: list[str] # final roles the user will have
     addRoles: list[str] # add these roles
     removeRoles: list[str] # remove these roles
     missingRoles: list[str] # missing roles, created by bot
@@ -50,7 +49,6 @@ class BindsController(Controller):
         bound_roles = BindCalculationResponse(
             success=True,
             nickname=None,
-            finalRoles=[],
             addRoles=[],
             removeRoles=[],
             missingRoles=[]

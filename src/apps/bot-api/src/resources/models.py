@@ -1,28 +1,30 @@
 import copy
-from dataclasses import dataclass, field
+
+from attrs import define, field
 
 from resources.constants import DEFAULTS
 
 __all__ = (
     "UserData",
     "GuildData",
-    "RobloxAccount",
 )
 
 
 def default_field(obj):
-    return field(default_factory=lambda: copy.copy(obj))
+    return field(factory=lambda: copy.copy(obj))
 
 
-@dataclass(slots=True)
+@define(slots=True)
 class UserData:
     id: int
     robloxID: str = None
     robloxAccounts: dict = default_field({"accounts": [], "guilds": {}})
 
 
-@dataclass(slots=True)
+@define(slots=True)
 class GuildData:
+    """Representation of the stored settings for a guild"""
+
     id: int
     binds: list = default_field([])  # FIXME
 
@@ -34,9 +36,17 @@ class GuildData:
     unverifiedRoleName: str = "Unverified"  # deprecated
     unverifiedRole: str = None
 
+    ageLimit: int = None
+    disallowAlts: bool = None
+    disallowBanEvaders: str = None  # Site sets it to "ban" when enabled. Null when disabled.
+    groupLock: dict = None
+
     nicknameTemplate: str = DEFAULTS.get("nicknameTemplate")
     unverifiedNickname: str = None
     allowOldRoles: bool = False
+
+    highTrafficServer: bool = None
+    premium: dict = None
 
     # Old bind fields.
     roleBinds: dict = None

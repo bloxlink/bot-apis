@@ -73,11 +73,10 @@ class Route:
             # -- We need async lambdas! :angry: --
             async def use_groups():
                 json, resp = await fetch("GET", USER_GROUPS, replace_data={"id": idx}, converter=lambda x: x["data"], parent_span=trans)
-                data["groups"] = json
+                data["groups"] = {}
 
-                data["groupsv2"] = {}
                 for group_data in json:
-                    data["groupsv2"][str(group_data["group"]["id"])] = group_data
+                    data["groups"][int(group_data["group"]["id"])] = group_data
 
             async def use_avatars():
                 for avatar_name, avatar_url in AVATAR_URLS.items():

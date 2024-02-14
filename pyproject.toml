@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "bot-api"
+version = "0.1.0"
+description = ""
+authors = ["Bloxlink <oss@blox.link>"]
+readme = "README.md"
+packages = [{include = "bot-api"}]
+
+[tool.poetry.dependencies]
+python = "<3.13, >=3.12"
+uvicorn = "^0.27.0"
+blacksheep = "^2.0.6"
+uvloop = "^0.19.0"
+essentials-configuration = "^2.0.4"
+markupsafe = "^2.1.4"
+pydantic = "^2.5.3"
+rich = "^13.7.0"
+bloxlink-lib = {git = "https://github.com/bloxlink/bloxlink-lib"}
+attrs = "^23.2.0"
+python-dotenv = "^1.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

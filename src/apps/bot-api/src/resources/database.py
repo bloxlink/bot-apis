@@ -8,14 +8,7 @@ from redis.asyncio import Redis
 from resources.models import GuildData, UserData
 
 # pylint: disable=no-name-in-module
-from resources.secrets import (
-    MONGO_CA_FILE,
-    MONGO_URL,
-    REDIS_HOST,
-    REDIS_PASSWORD,
-    REDIS_PORT,
-    REDIS_URL,
-)
+from resources.secrets import MONGO_CA_FILE, MONGO_URL, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_URL
 
 mongo: AsyncIOMotorClient = None
 redis: Redis = None
@@ -32,15 +25,13 @@ async def connect_database():
             with open("src/cert.crt", "w") as f:
                 f.write(MONGO_CA_FILE)
 
-    mongo = AsyncIOMotorClient(
-        MONGO_URL, tlsCAFile="src/cert.crt" if MONGO_CA_FILE else None)
+    mongo = AsyncIOMotorClient(MONGO_URL, tlsCAFile="src/cert.crt" if MONGO_CA_FILE else None)
     mongo.get_io_loop = asyncio.get_running_loop
 
     if REDIS_URL:
         redis = Redis.from_url(REDIS_URL, decode_responses=True)
     else:
-        redis = Redis(host=REDIS_HOST, port=REDIS_PORT,
-                      password=REDIS_PASSWORD, decode_responses=True)
+        redis = Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, decode_responses=True)
 
 
 async def fetch_item(domain: str, constructor: Callable, item_id: str, *aspects) -> object:
@@ -63,8 +54,7 @@ async def fetch_item(domain: str, constructor: Callable, item_id: str, *aspects)
 
         if item and not isinstance(item, (list, dict)):
             if aspects:
-                items = {x: item[x] for x in aspects if item.get(
-                    x) and not isinstance(item[x], dict)}
+                items = {x: item[x] for x in aspects if item.get(x) and not isinstance(item[x], dict)}
                 if items:
                     await redis.hset(f"{domain}:{item_id}", items)
             else:
@@ -82,9 +72,6 @@ async def update_item(domain: str, item_id: str, **aspects) -> None:
     """
     Update an item's aspects in local cache, redis, and database.
     """
-    # update redis cache
-    redis_aspects = dict(aspects)
-
     unset_aspects = {}
     set_aspects = {}
     for key, val in aspects.items():
@@ -93,13 +80,22 @@ async def update_item(domain: str, item_id: str, **aspects) -> None:
         else:
             set_aspects[key] = val
 
-    # we don't save lists and dicts to redis
-    for aspect_name, aspect_value in dict(aspects).items():
-        if isinstance(aspect_value, (dict, list, bool)) or aspect_value is None:
-            redis_aspects.pop(aspect_name)
+    # Update redis cache
+    redis_set_aspects = {}
+    redis_unset_aspects = {}
 
-    if redis_aspects:
-        await redis.hmset(f"{domain}:{item_id}", redis_aspects)
+    for aspect_name, aspect_value in dict(aspects).items():
+        if aspect_value is None:
+            redis_unset_aspects[aspect_name] = aspect_value
+        elif isinstance(aspect_value, (dict, list, bool)):
+            pass
+        else:
+            redis_set_aspects[aspect_name] = aspect_value
+
+    if redis_set_aspects:
+        await redis.hset(f"{domain}:{item_id}", mapping=redis_set_aspects)
+    if redis_unset_aspects:
+        await redis.hdel(f"{domain}:{item_id}", *redis_unset_aspects.keys())
 
     # update database
     await mongo.bloxlink[domain].update_one(

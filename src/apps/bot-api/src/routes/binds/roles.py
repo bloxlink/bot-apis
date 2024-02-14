@@ -1,7 +1,11 @@
+import copy
+
 from sanic.response import json
 
+from resources.binds import GroupBind, GuildBind, get_binds
 from resources.database import fetch_guild_data
 from resources.models import GuildData
+from resources.roblox_group import RobloxGroup
 
 
 class Route:
@@ -60,68 +64,76 @@ class Route:
         json_data: dict = request.json or {}
 
         guild_id: str = json_data.get("guild_id")
-        if not guild_id:
-            return json({"success": False, "reason": "No guild_id was given."})
+        guild_roles: list = json_data.get("guild_roles")
 
-        final_roles: list = json_data.get("user_roles", [])
-        final_roles = [str(x) for x in final_roles]
-        original_roles = set(final_roles)
+        if not (guild_id and guild_roles):
+            return json({"success": False, "reason": "No guild_id or guild_roles was given."})
 
-        successful_binds: dict = json_data.get(
-            "successful_binds", {"give": [], "remove": []})
+        response = await calculate_final_roles(json_data, guild_id, guild_roles)
 
-        guild_data: GuildData = await fetch_guild_data(guild_id, "binds", "allowOldRoles")
-        guild_binds: list = guild_data.binds or []
-        allow_old_roles = guild_data.allowOldRoles
+        return json({"success": True, **response})
 
-        # Get all the roles that are related to a bind in some way.
-        # This does not include the default verified/unverified roles.
-        bind_related_roles = set()
-        entire_group_binds = []
 
-        for bind in guild_binds:
-            add_roles = bind.get("roles") or []
-            if add_roles is None:
-                add_roles = []
+async def calculate_final_roles(data: dict, guild_id: str, guild_roles: list) -> dict:
+    final_roles: list = data.get("user_roles", [])
+    final_roles = set(str(x) for x in final_roles)
+    original_roles: set = copy.copy(final_roles)
 
-            remove_roles = bind.get("removeRoles") or []
+    successful_binds: dict = data.get(
+        "successful_binds", {"give": [], "remove": []})
 
-            bind_type = bind.get("bind", {}).get("type")
-            if (bind_type == "group") and not add_roles:
-                entire_group_binds.append(bind["bind"]["id"])
+    guild_data: GuildData = await fetch_guild_data(guild_id, "allowOldRoles")
+    guild_data.binds = await get_binds(guild_id)
 
-            bind_related_roles.update(add_roles)
-            bind_related_roles.update(remove_roles)
+    # Get all the roles that are related to a bind in some way.
+    # This does not include the default verified/unverified roles.
+    bind_related_roles = set()
+    linked_group_roles = set()
 
-        # Update final_roles so that way we just have the roles of a user that
-        # we should not change if allowOldRoles is disabled.
-        if not allow_old_roles:
-            non_bind_roles = set(final_roles).difference(bind_related_roles)
-            final_roles = list(non_bind_roles)
+    for bind in guild_data.binds:
+        bind: GuildBind
 
-        final_roles = set(final_roles)
+        if isinstance(bind, GroupBind):
+            if bind.subtype == "linked_group":
+                group = RobloxGroup(bind.id)
+                matched_roles = await group.rolesets_to_roles(guild_roles)
 
-        # Stringify in case a mismatch somehow occurs.
-        # final_roles and original_roles are stringified by this point.
-        roles_to_give = set([str(x) for x in successful_binds["give"]])
-        roles_to_remove = set([str(x) for x in successful_binds["remove"]])
+                linked_group_roles.update([str(value)
+                                          for value in matched_roles.values()])
 
-        # Remove roles that will be removed from the roles being given since it's redundant.
-        roles_to_give.difference_update(roles_to_remove)
+        if bind.roles:
+            bind_related_roles.update(str(x) for x in bind.roles)
 
-        # Figure out which roles were added (compared to original roles) & update final_roles.
-        final_given_roles = roles_to_give.difference(original_roles)
-        final_roles.update(roles_to_give)
+        if bind.removeRoles:
+            bind_related_roles.update(str(x) for x in bind.removeRoles)
 
-        # Figure out which roles were removed (compared to original_roles) & update final_roles.
-        final_removed_roles = roles_to_remove.intersection(original_roles)
-        final_roles.difference_update(roles_to_remove)
+    # Stringify in case a mismatch somehow occurs.
+    roles_to_give = set(str(x) for x in successful_binds["give"])
+    roles_to_remove = set(str(x) for x in successful_binds["remove"])
 
-        return json(
-            {
-                "success": True,
-                "final_roles": list(final_roles),
-                "added_roles": list(final_given_roles),
-                "removed_roles": list(final_removed_roles),
-            }
-        )
+    # Update final_roles so that way we just have the roles of a user that
+    # we should not change if allowOldRoles is disabled.
+    if not guild_data.allowOldRoles:
+        final_roles.difference_update(bind_related_roles, linked_group_roles)
+
+        # Add entire group-related roles to list of roles to remove.
+        linked_group_roles.difference_update(roles_to_give)
+        linked_group_roles.intersection_update(original_roles)
+        roles_to_remove.update(linked_group_roles)
+
+    # Remove roles that will be removed from the roles being given since it's redundant.
+    roles_to_give.difference_update(roles_to_remove)
+
+    # Figure out which roles were added (compared to original roles) & update final_roles.
+    final_given_roles = roles_to_give.difference(original_roles)
+    final_roles.update(roles_to_give)
+
+    # Figure out which roles were removed (compared to original_roles) & update final_roles.
+    final_roles.difference_update(roles_to_remove)
+    final_removed_roles = original_roles.difference(final_roles)
+
+    return {
+        "final_roles": list(final_roles),
+        "added_roles": list(final_given_roles),
+        "removed_roles": list(final_removed_roles),
+    }

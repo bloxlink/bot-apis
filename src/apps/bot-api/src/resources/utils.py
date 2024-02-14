@@ -166,4 +166,4 @@ def find_role_in_guild_roles(roles: Iterable, role_id: str):
     """
     for x in roles:
         if role_id == x.get("id"):
-            yield x
+            return x

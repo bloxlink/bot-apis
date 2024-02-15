@@ -56,11 +56,10 @@ class BindsController(Controller):
 
         guild_data = await fetch_guild_data(
             guild_id,
-            "binds",
             "allowOldRoles",
         )
 
-        potential_binds, remove_roles, missing_roles = await filter_binds(guild_id, guild_data.binds, roblox_user, member, guild_roles)
+        potential_binds, remove_roles, missing_roles = await filter_binds(guild_id, roblox_user, member, guild_roles)
         nickname = await parse_template(
             guild_id=guild_id,
             guild_name=guild_name,

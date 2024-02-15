@@ -1,5 +1,5 @@
 import re
-from bloxlink_lib import GuildBind, RobloxUser, MemberSerializable, RoleSerializable, find
+from bloxlink_lib import GuildBind, RobloxUser, MemberSerializable, RoleSerializable, find, get_binds
 from bloxlink_lib.database import fetch_guild_data
 
 
@@ -7,7 +7,7 @@ ARBITRARY_GROUP_TEMPLATE = re.compile(r"\{group-rank-(.*?)\}")
 NICKNAME_TEMPLATE_REGEX = re.compile(r"\{(.*?)\}")
 
 
-async def filter_binds(guild_id: int, binds: list[GuildBind], roblox_user: RobloxUser | None, member: MemberSerializable, guild_roles: dict[str, RoleSerializable]) -> tuple[list[GuildBind], list[str], list[str]]:
+async def filter_binds(guild_id: int, roblox_user: RobloxUser | None, member: MemberSerializable, guild_roles: dict[int, RoleSerializable]) -> tuple[list[GuildBind], list[str], list[str]]:
     """Filter the binds that apply to the user."""
 
     successful_binds: list[GuildBind] = []
@@ -15,9 +15,12 @@ async def filter_binds(guild_id: int, binds: list[GuildBind], roblox_user: Roblo
     missing_roles: list[str] = []
 
     guild_data = await fetch_guild_data(guild_id, "verifiedRoleEnabled", "unverifiedRoleEnabled")
+    binds = await get_binds(guild_id, guild_roles=guild_roles)
+    verified_role_enabled = guild_data.verifiedRoleEnabled
+    unverified_role_enabled = guild_data.unverifiedRoleEnabled
 
     for bind in binds:
-        if (bind.type == "verified" and not guild_data.verifiedRoleEnabled) or (bind.type == "unverified" and not guild_data.unverifiedRoleEnabled):
+        if (bind.type == "verified" and not verified_role_enabled) or (bind.type == "unverified" and not unverified_role_enabled):
             continue
 
         bind_applies, bind_additional_roles, bind_missing_roles, bind_ineligible_roles = await bind.satisfies_for(guild_roles, member, roblox_user)
@@ -31,6 +34,12 @@ async def filter_binds(guild_id: int, binds: list[GuildBind], roblox_user: Roblo
         else:
             remove_roles.extend(bind_ineligible_roles)
 
+    # create any missing verified/unverified roles
+    if roblox_user and verified_role_enabled and not any(b.type == "verified" for b in binds):
+        missing_roles.append("Verified")
+    elif not roblox_user and unverified_role_enabled and not any(b.type == "unverified" for b in binds):
+        missing_roles.append("Unverified")
+
     return successful_binds, remove_roles, missing_roles
 
 
@@ -43,11 +52,11 @@ async def get_nickname_template(guild_id, potential_binds: list[GuildBind]) -> t
     )
 
     # first sort the binds by role position
-    potential_binds.sort(key=lambda b: b.highest_role.position, reverse=True)
+    potential_binds.sort(key=lambda b: b.highest_role and b.highest_role.position, reverse=True)
 
     highest_priority_bind: GuildBind = potential_binds[0] if potential_binds else None
 
-    nickname_template = highest_priority_bind.nickname if highest_priority_bind else guild_data.nicknameTemplate
+    nickname_template = highest_priority_bind.nickname if highest_priority_bind and highest_priority_bind.nickname else guild_data.nicknameTemplate
 
     return nickname_template, highest_priority_bind
 
@@ -62,6 +71,9 @@ async def parse_template(guild_id: int, guild_name: str, potential_binds: list[G
 
     The template is then adjusted to the user's data.
     """
+
+    if not roblox_user:
+        return None
 
     nickname_template, highest_priority_bind = await get_nickname_template(guild_id, potential_binds)
     smart_name: str = ""
@@ -167,5 +179,3 @@ async def parse_template(guild_id: int, guild_name: str, potential_binds: list[G
         return nickname_template[:32]
 
     return nickname_template
-
-

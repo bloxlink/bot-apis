@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Bloxlink <oss@blox.link>"]
 readme = "README.md"
-packages = [{include = "bot-api"}]
+packages = [{include = "bot-api"}, {include = "relay-server"}]
 
 [tool.poetry.dependencies]
 python = "<3.13, >=3.12"
@@ -18,6 +18,7 @@ rich = "^13.7.0"
 bloxlink-lib = {git = "https://github.com/bloxlink/bloxlink-lib"}
 attrs = "^23.2.0"
 python-dotenv = "^1.0.1"
+discord = "^2.3.2"
 
 
 [build-system]

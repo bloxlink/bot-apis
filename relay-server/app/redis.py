@@ -1,14 +1,12 @@
-import importlib
-import os
 import asyncio
 import time
 import json
 import logging
-from typing import Optional
+from typing import Optional, Literal
 
-from bloxlink_lib import find, load_modules
+from bloxlink_lib import find, BaseModel
 from bloxlink_lib.database import redis
-from .base import RELAY_ENDPOINTS, RelayEndpoint, RelayRequest, RelayPath
+from .base import discover_endpoints, RelayEndpoint, RelayRequest, RelayPath, RELAY_ENDPOINTS
 from .bloxlink import bloxlink
 
 
@@ -53,50 +51,31 @@ class RedisRelayRequest(RelayRequest):
                 f"request {self.nonce} on {working_channel}: {e}"
             )
 
+class RedisMessage(BaseModel):
+    """A message from the Redis pubsub channel."""
 
-def discover_endpoints() -> list[RelayEndpoint]:
-    """Discovers all endpoints in the endpoints directory."""
+    type: Literal["message", "subscribe"]
+    nonce: str = None
+    pattern: str | None
+    channel: str
+    data: str | int
 
-    discovered_endpoints: list[RelayEndpoint] = []
-    endpoint_modules = load_modules("app/endpoints", starting_path="./relay-server/")
+class RedisMessageData(BaseModel):
+    """Data from a Redis message."""
 
-    for endpoint_module in endpoint_modules:
-        for endpoint_class_name in filter(
-            lambda n: n != "RelayEndpoint" and n.lower().endswith("endpoint"), dir(endpoint_module)
-        ):
-            endpoint_class = getattr(endpoint_module, endpoint_class_name)
+    nonce: str
+    data: dict | None
 
-            if not issubclass(endpoint_class, RelayEndpoint):
-                continue
-
-            discovered_endpoints.append(endpoint_class())
-
-    return discovered_endpoints
-
-
-async def handle_message(message: dict[str, str]):
+async def handle_message(channel: str, message_data: RedisMessageData):
     """Handles a message from the pubsub channel."""
 
     received_at = time.time_ns()
 
-    channel = RelayPath(message["channel"])
-    endpoint_name = channel[0]
+    relay_channel = RelayPath(channel)
+    endpoint_name: str = relay_channel[0]
 
-    data: dict
-    nonce: str
-    payload: dict | None
-
-    try:
-        # System-defined data (nonce)
-        data = json.loads(message["data"])
-        nonce = data.pop("nonce", "")
-
-        # User-defined data.
-        payload = data.get("data", {})
-
-    except Exception as ex: # pylint: disable=broad-except
-        logging.error(f"Received malformed request: {ex.__class__.__name__} {ex}")
-        return
+    nonce = message_data.nonce
+    payload = message_data.data
 
     endpoint: RelayEndpoint | None = find(lambda e: e.path == endpoint_name, RELAY_ENDPOINTS)
 
@@ -107,7 +86,7 @@ async def handle_message(message: dict[str, str]):
     try:
         request = RedisRelayRequest(received_at, nonce, payload)
 
-        await asyncio.wait_for(endpoint.handle(request), timeout=2)
+        response = await endpoint.handle(request)
 
     except TimeoutError:
         logging.error(f"Endpoint execution: {channel} exceeded process time!")
@@ -120,15 +99,10 @@ async def handle_message(message: dict[str, str]):
         logging.error(f"Endpoint {channel}: {ex.__class__.__name__} {ex}")
 
 
-
 async def run():
-    """Runs the Redis pubsub listener."""
+    """Run the Redis pubsub listener."""
 
-    try:
-        RELAY_ENDPOINTS.extend(discover_endpoints())
-    except Exception as ex:
-        logging.error(f"Failed to load endpoints: {ex}")
-        raise SystemExit(ex) from ex
+    discover_endpoints()
 
     # Subscribe to channels, including ones used to interact with relay endpoints.
     endpoint_channels = [str(e.path) for e in RELAY_ENDPOINTS]
@@ -140,9 +114,13 @@ async def run():
 
     while True:
         async for message in redis_pubsub.listen():
-            if message and message["type"] == "message":
-                handler = asyncio.create_task(handle_message(message))
+            print(message)
+            message = RedisMessage(**message)
+
+            if message.type == "message":
+                handler = asyncio.create_task(handle_message(message.channel, RedisMessageData(**json.loads(message.data))))
                 background_tasks.add(handler)
                 handler.add_done_callback(background_tasks.discard)
+
 
 asyncio.create_task(run())

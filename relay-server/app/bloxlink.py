@@ -33,19 +33,27 @@ class Bloxlink(discord.AutoShardedClient):
         return intents
 
     @property
-    def _shard_ids(self) -> tuple[int]:
-        """Get the shard range for the current container."""
+    def node_id(self):
+        """Get the node ID for the current container."""
 
         hostname = getenv("HOSTNAME", "bloxlink-0")
-        shards_per_node = int(getenv("SHARDS_PER_NODE", "1"))
 
         try:
             node_id = int(hostname.split("-")[-1])
         except ValueError:
-            node_id = None
+            node_id = 0
+
+        return node_id
+
+    @property
+    def _shard_ids(self) -> tuple[int]:
+        """Get the shard range for the current container."""
+
+        shards_per_node = int(getenv("SHARDS_PER_NODE", "1"))
+        node_id = self.node_id
 
         # Determine the shard range
-        if node_id is not None:
+        if node_id:
             start_shard = node_id * shards_per_node
             end_shard = min((node_id + 1) * shards_per_node, CONFIG.SHARD_COUNT)
             shard_range = tuple(range(start_shard, end_shard))

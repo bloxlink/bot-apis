@@ -2,25 +2,28 @@ import asyncio
 import time
 import json
 import logging
-from typing import Optional, Literal
+from typing import Optional, Literal, TypeVar, Generic
+from redis import ConnectionError
 
-from bloxlink_lib import find, BaseModel
+from bloxlink_lib import find, BaseModel, parse_into, create_task_log_exception
 from bloxlink_lib.database import redis
-from .base import discover_endpoints, RelayEndpoint, RelayRequest, RelayPath, RELAY_ENDPOINTS
+from .base import discover_endpoints, RelayEndpoint, RelayPath, RELAY_ENDPOINTS
 from .bloxlink import bloxlink
 
 
 redis_pubsub = redis.pubsub()
 redis_heartbeat_task = None
 
-background_tasks = set()
+T = TypeVar("T", bound=BaseModel | dict)
 
 
-class RedisRelayRequest(RelayRequest):
+class RedisRelayRequest(Generic[T]):
     """A request object for the Redis relay system."""
 
-    def __init__(self, received_at: int, nonce: Optional[str], payload: dict | None):
-        super().__init__(received_at, nonce, payload)
+    def __init__(self, received_at: int, nonce: Optional[str], payload: T):
+        self.nonce = nonce
+        self.payload = payload
+        self.received_at = received_at
 
     async def respond(self, data: BaseModel | dict, *, channel: Optional[str] = None):
         if not channel and not self.nonce:
@@ -58,7 +61,7 @@ class RedisMessage(BaseModel):
     nonce: str = None
     pattern: str | None
     channel: str
-    data: str | int
+    data: str | int | dict
 
 class RedisMessageData(BaseModel):
     """Data from a Redis message."""
@@ -74,10 +77,10 @@ async def handle_message(channel: str, message_data: RedisMessageData):
     relay_channel = RelayPath(channel)
     endpoint_name: str = relay_channel[0]
 
-    nonce = message_data.nonce
-    payload = message_data.data
-
     endpoint: RelayEndpoint | None = find(lambda e: e.path == endpoint_name, RELAY_ENDPOINTS)
+
+    nonce = message_data.nonce
+    payload = parse_into(message_data.data, endpoint.payload_model) if endpoint else None
 
     if not endpoint:
         logging.warning("Ignored request, no suitable endpoints.")
@@ -120,11 +123,9 @@ async def run():
                 message = RedisMessage(**message)
 
                 if message.type == "message":
-                    handler = asyncio.create_task(handle_message(message.channel, RedisMessageData(**json.loads(message.data))))
-                    background_tasks.add(handler)
-                    handler.add_done_callback(background_tasks.discard)
+                    create_task_log_exception(handle_message(message.channel, RedisMessageData(**json.loads(message.data))))
 
-        except redis.ConnectionError as e:
+        except ConnectionError as e:
             logging.error(f"Redis connection error: {e}")
             await asyncio.sleep(5)
 

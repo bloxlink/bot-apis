@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Generic, TypeVar
 from bloxlink_lib import load_modules, BaseModel
 
 
 RELAY_ENDPOINTS: list['RelayEndpoint'] = []
-
+T = TypeVar("T", bound=BaseModel | dict)
 
 
 class Response(BaseModel):
@@ -53,9 +53,9 @@ class RelayPath(list[str]):
         raise TypeError("Provided parameter: path must be typeof string!")
 
 
-class RelayRequest(ABC):
+class RelayRequest[T: BaseModel | dict](ABC):
     """A request object for the relay system."""
-    def __init__(self, received_at: int, nonce: Optional[str], payload: dict):
+    def __init__(self, received_at: int, nonce: Optional[str], payload: T):
         self.nonce = nonce
         self.payload = payload
         self.received_at = received_at
@@ -66,12 +66,13 @@ class RelayRequest(ABC):
         raise NotImplementedError("Respond() is not implemented.")
 
 
-class RelayEndpoint(ABC):
-    def __init__(self, path: str | RelayPath):
+class RelayEndpoint(Generic[T]):
+    def __init__(self, path: str | RelayPath, payload_model: T = None):
         self.path = path if isinstance(path, RelayPath) else RelayPath(path)
+        self.payload_model = payload_model
 
     @abstractmethod
-    async def handle(self, request: RelayRequest) -> BaseModel:
+    async def handle(self, request: RelayRequest[T]) -> BaseModel:
         raise NotImplementedError(f"Endpoint {self.__class__.__name__} is not implemented.")
 
 

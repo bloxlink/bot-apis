@@ -1,5 +1,6 @@
 from os import getenv
 import logging
+from time import time
 import discord
 from .config import CONFIG
 
@@ -9,6 +10,7 @@ class Bloxlink(discord.AutoShardedClient):
     """A subclass of discord.AutoShardedClient that is used to represent the Bloxlink client."""
 
     def __init__(self, **kwargs):
+        self.started_at = time()
         super().__init__(
             intents=self._intents,
             chunk_guilds_at_startup=False,

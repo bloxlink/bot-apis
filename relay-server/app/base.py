@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import Optional, TypedDict
-from bloxlink_lib import load_modules
+from typing import Optional
+from bloxlink_lib import load_modules, BaseModel
 
 
 RELAY_ENDPOINTS: list['RelayEndpoint'] = []
 
 
 
-class Response(TypedDict):
+class Response(BaseModel):
     """A response from each node."""
 
     success: bool
@@ -71,7 +71,7 @@ class RelayEndpoint(ABC):
         self.path = path if isinstance(path, RelayPath) else RelayPath(path)
 
     @abstractmethod
-    async def handle(self, request: RelayRequest) -> Response:
+    async def handle(self, request: RelayRequest) -> BaseModel:
         raise NotImplementedError(f"Endpoint {self.__class__.__name__} is not implemented.")
 
 

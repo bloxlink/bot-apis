@@ -22,7 +22,7 @@ class RedisRelayRequest(RelayRequest):
     def __init__(self, received_at: int, nonce: Optional[str], payload: dict | None):
         super().__init__(received_at, nonce, payload)
 
-    async def respond(self, data: dict | list, *, channel: Optional[str] = None):
+    async def respond(self, data: BaseModel | dict, *, channel: Optional[str] = None):
         if not channel and not self.nonce:
             # System is intended to use n nonce (operation id) to track responses.
             # If not, a channel should be specified.
@@ -31,7 +31,7 @@ class RedisRelayRequest(RelayRequest):
         working_channel = channel or f"REPLY:{self.nonce}"
 
         try:
-            response_data = json.dumps({"nonce": self.nonce, "data": data, "cluster_id": bloxlink.node_id})
+            response_data = data.model_dump_json() if isinstance(data, BaseModel) else json.dumps({"nonce": self.nonce, "data": data, "cluster_id": bloxlink.node_id})
             await redis.publish(working_channel, response_data)
 
             published_at = time.time_ns()
@@ -85,8 +85,10 @@ async def handle_message(channel: str, message_data: RedisMessageData):
 
     try:
         request = RedisRelayRequest(received_at, nonce, payload)
-
         response = await endpoint.handle(request)
+
+        if response:
+            await request.respond(response)
 
     except TimeoutError:
         logging.error(f"Endpoint execution: {channel} exceeded process time!")
@@ -113,14 +115,21 @@ async def run():
     logging.info("Listening for messages.")
 
     while True:
-        async for message in redis_pubsub.listen():
-            print(message)
-            message = RedisMessage(**message)
+        try:
+            async for message in redis_pubsub.listen():
+                message = RedisMessage(**message)
 
-            if message.type == "message":
-                handler = asyncio.create_task(handle_message(message.channel, RedisMessageData(**json.loads(message.data))))
-                background_tasks.add(handler)
-                handler.add_done_callback(background_tasks.discard)
+                if message.type == "message":
+                    handler = asyncio.create_task(handle_message(message.channel, RedisMessageData(**json.loads(message.data))))
+                    background_tasks.add(handler)
+                    handler.add_done_callback(background_tasks.discard)
+
+        except redis.ConnectionError as e:
+            logging.error(f"Redis connection error: {e}")
+            await asyncio.sleep(5)
+
+
+        print("disconnect")
 
 
 asyncio.create_task(run())

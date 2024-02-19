@@ -1,9 +1,12 @@
 import time
 import json
+import asyncio
+import logging
 from datetime import timedelta, datetime
-from bloxlink_lib import parse_into, BaseModel, create_task_log_exception
+from bloxlink_lib import parse_into, BaseModel, create_task_log_exception, StatusCodes, fetch, MemberSerializable
 from bloxlink_lib.database import redis
 import discord
+from ..config import CONFIG
 from ..base import RelayEndpoint
 from ..redis import RedisRelayRequest
 from ..bloxlink import bloxlink
@@ -21,7 +24,8 @@ class Payload(BaseModel):
     chunk_limit: int
 
 class VerifyAllProgress(BaseModel):
-    started: datetime
+    started_at: datetime
+    ended_at: datetime = None
     members_processed: int
     total_members: int
     current_chunk: int
@@ -35,7 +39,7 @@ async def record_progress(nonce: str, progress: int, total: int, current_chunk: 
 
     if not current_progress:
         current_progress = {
-            "started": datetime.now(),
+            "started_at": datetime.now(),
             "members_processed": progress,
             "total_members": total,
             "current_chunk": current_chunk,
@@ -47,8 +51,11 @@ async def record_progress(nonce: str, progress: int, total: int, current_chunk: 
     parsed_progress.current_chunk = current_chunk
     parsed_progress.total_chunks = total_chunks
 
+    if total_chunks == current_chunk:
+        parsed_progress.ended_at = datetime.now()
 
-    await redis.set(f"progress:{nonce}", parsed_progress.model_dump_json(), ex=int(timedelta(days=2).total_seconds()))
+
+    await redis.set(f"progress:{nonce}", parsed_progress, expire=timedelta(days=2))
 
 
 
@@ -66,6 +73,29 @@ class VerifyAllEndpoint(RelayEndpoint[Payload]):
         split_chunk = [members[i : i + chunk_limit] for i in range(0, len(members), chunk_limit)]
 
         for i, member_chunk in enumerate(split_chunk, 1):
+            logging.debug(f"Sending chunk {i + 1} of {len(split_chunk)} chunks.")
+
+            text, response = await fetch(
+                "POST",
+                f"{CONFIG.HTTP_BOT_API}/api/update/users",
+                headers={"Authorization": CONFIG.HTTP_BOT_AUTH},
+                body={
+                    "guild_id": guild.id,
+                    "members": [MemberSerializable.from_discordpy(m).model_dump() for m in member_chunk],
+                },
+                parse_as="JSON",
+                timeout=None,
+            )
+            logging.debug(f"BOT SERVER RESPONSE: {response.status}, {text}")
+
+            if response.status != StatusCodes.OK:
+                logging.error(f"Verify endpoint response: {response.status}, {text}")
+                break
+
+            # Wait 3 seconds before sending the next request.
+            logging.debug("Verify endpoint: sleeping for 3 seconds.")
+            await asyncio.sleep(3)
+
             await record_progress(nonce, len(member_chunk), len(members), i, len(split_chunk))
 
     async def handle(self, request: RedisRelayRequest[Payload]) -> Response:

@@ -52,7 +52,7 @@ async def get_nickname_template(guild_id, potential_binds: list[GuildBind]) -> t
     )
 
     # first sort the binds by role position
-    potential_binds.sort(key=lambda b: b.highest_role and b.highest_role.position, reverse=True)
+    potential_binds.sort(key=lambda b: b.highest_role.position if b.highest_role else 100000, reverse=True) # arbitrary big number
 
     highest_priority_bind: GuildBind = potential_binds[0] if potential_binds else None
 

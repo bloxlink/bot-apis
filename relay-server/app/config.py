@@ -12,6 +12,8 @@ class Config(BLOXLINK_CONFIG):
     SHARD_COUNT: int = 1
     SHARDS_PER_NODE: int = 1
     BOT_RELEASE: Literal["LOCAL", "MAIN", "PRO"] = "LOCAL"
+    HTTP_BOT_API: str
+    HTTP_BOT_AUTH: str
 
     def model_post_init(self, __context):
         if self.BOT_RELEASE != "LOCAL":

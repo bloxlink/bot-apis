@@ -75,4 +75,6 @@ class BindsController(Controller):
         bound_roles["missingRoles"] = missing_roles
         bound_roles["nickname"] = nickname
 
+        print(bound_roles)
+
         return bound_roles

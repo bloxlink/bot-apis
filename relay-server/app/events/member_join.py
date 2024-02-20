@@ -12,7 +12,7 @@ async def on_member_join(member: Member):
     guild_data = await fetch_guild_data(member.guild.id, "autoRoles", "autoVerification", "highTrafficServer")
 
     if (guild_data.autoRoles or guild_data.autoVerification) and not guild_data.highTrafficServer:
-        text, response = await fetch(
+        json_response, response = await fetch(
             "POST",
             f"{CONFIG.HTTP_BOT_API}/api/update/join/{member.guild.id}/{member.id}",
             headers={"Authorization": CONFIG.HTTP_BOT_AUTH},
@@ -21,7 +21,7 @@ async def on_member_join(member: Member):
             },
             parse_as="JSON"
         )
-        logging.debug(f"Relay server member join response: {response.status}, {text}")
+        logging.debug(f"Relay server member join response: {response.status}, {json_response}")
 
         if response.status != StatusCodes.OK:
-            logging.error(f"Relay server member join error: {response.status}, {text}")
+            logging.error(f"Relay server member join error: {response.status}, {json_response}")

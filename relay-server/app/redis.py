@@ -119,18 +119,17 @@ async def run():
 
     while True:
         try:
-            async for message in redis_pubsub.listen():
-                message = RedisMessage(**message)
+            message = await redis_pubsub.get_message(ignore_subscribe_messages=True)
 
-                if message.type == "message":
-                    create_task_log_exception(handle_message(message.channel, RedisMessageData(**json.loads(message.data))))
+            if message:
+                parsed_message = RedisMessage(**message)
+
+                if parsed_message.type == "message":
+                    create_task_log_exception(handle_message(parsed_message.channel, RedisMessageData(**json.loads(parsed_message.data))))
 
         except ConnectionError as e:
             logging.error(f"Redis connection error: {e}")
             await asyncio.sleep(5)
 
 
-        print("disconnect")
-
-
-asyncio.create_task(run())
+create_task_log_exception(run())

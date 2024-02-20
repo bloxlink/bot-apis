@@ -6,10 +6,10 @@ from typing import Optional
 
 from blacksheep.server.controllers import Controller, post
 from blacksheep import FromJSON
-from bloxlink_lib import RobloxUser, MemberSerializable, RoleSerializable, BaseModel
+from bloxlink_lib import RobloxUser, MemberSerializable, RoleSerializable, BaseModel, parse_template
 from bloxlink_lib.database import fetch_guild_data
 from ..models import Response
-from ..lib.binds import filter_binds, parse_template
+from ..lib.binds import filter_binds
 
 
 class UpdateUserPayload(BaseModel):

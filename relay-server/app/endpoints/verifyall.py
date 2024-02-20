@@ -84,6 +84,7 @@ class VerifyAllEndpoint(RelayEndpoint[Payload]):
                     body={
                         "guild_id": guild.id,
                         "members": [MemberSerializable.from_discordpy(m).model_dump() for m in member_chunk],
+                        "nonce": nonce
                     },
                     parse_as="JSON",
                     timeout=None,

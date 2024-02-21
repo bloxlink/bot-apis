@@ -21,7 +21,7 @@ async def index():
 async def main():
     """Starts the server."""
 
-    config = uvicorn.Config(app, host=config.HOST, port=CONFIG.PORT, log_level=CONFIG.LOG_LEVEL.lower())
+    config = uvicorn.Config(app, host=CONFIG.HOST, port=CONFIG.PORT, log_level=CONFIG.LOG_LEVEL.lower())
     server = uvicorn.Server(config)
     await server.serve()
 

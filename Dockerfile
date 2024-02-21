@@ -22,4 +22,4 @@ RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install --without dev
 
 # COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
-CMD ["poetry", "run", "python", "bot-api"]
+ENTRYPOINT ["poetry", "run", "python", "bot-api"]

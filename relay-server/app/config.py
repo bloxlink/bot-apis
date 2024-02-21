@@ -19,6 +19,7 @@ class Config(BLOXLINK_CONFIG):
     HTTP_BOT_AUTH: str
 
     PORT: int = 8010
+    HOST: str = "0.0.0.0"
 
     def model_post_init(self, __context):
         if self.BOT_RELEASE != "LOCAL":

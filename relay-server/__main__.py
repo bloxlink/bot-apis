@@ -5,6 +5,7 @@ from app.config import CONFIG
 
 
 MODULES = (
+    "app.web",
     "app.events",
     "app"
 )

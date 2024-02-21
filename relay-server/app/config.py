@@ -18,6 +18,8 @@ class Config(BLOXLINK_CONFIG):
     HTTP_BOT_API: str
     HTTP_BOT_AUTH: str
 
+    PORT: int = 8010
+
     def model_post_init(self, __context):
         if self.BOT_RELEASE != "LOCAL":
             if self.SHARD_COUNT < 1:

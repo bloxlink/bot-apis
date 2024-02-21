@@ -203,7 +203,7 @@ requests = "^2.31.0"
 type = "git"
 url = "https://github.com/bloxlink/bloxlink-lib"
 reference = "HEAD"
-resolved_reference = "ed2e537fe8b73191ac6c92ad80892d932f5896b6"
+resolved_reference = "8752d86f0f121031b6d1eb287333ec1c39ce169b"
 
 [[package]]
 name = "certifi"
@@ -593,7 +593,7 @@ speedups = ["aiohttp[speedups] (>=3.9,<4.0)", "ciso8601 (>=2.3,<3.0)", "orjson (
 type = "git"
 url = "https://github.com/hikari-py/hikari.git"
 reference = "refs/pull/1803/merge"
-resolved_reference = "6a271d6828e0badb7bd95f57e5aaaf120de87355"
+resolved_reference = "7d7c79fa3306170a9f63d830318c9a01ca24f998"
 
 [[package]]
 name = "httptools"

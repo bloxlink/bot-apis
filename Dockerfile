@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.12
 
 ENV POETRY_VIRTUALENVS_CREATE false
 RUN pip install --upgrade pip && pip install poetry

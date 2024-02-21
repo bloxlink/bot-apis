@@ -1,10 +1,11 @@
 FROM python:3.12
 
+WORKDIR /
+
 ENV POETRY_VIRTUALENVS_CREATE false
 RUN pip install --upgrade pip && pip install poetry
-COPY bot-api poetry.lock pyproject.toml /app/
+COPY bot-api relay-server poetry.lock pyproject.toml ./
 
-WORKDIR /app
-RUN poetry install
+RUN poetry install --no-root
 
 CMD ["poetry", "run", "python", "bot-api"]

@@ -34,8 +34,8 @@ class Settings(BaseModel):
 def default_configuration_builder() -> ConfigurationBuilder:
     app_env = get_env()
     builder = ConfigurationBuilder(
-        YAMLFile("bot-api/settings.yaml"),
-        YAMLFile(f"bot-api/settings.{app_env.lower()}.yaml", optional=True),
+        YAMLFile("settings.yaml"),
+        YAMLFile(f"settings.{app_env.lower()}.yaml", optional=True),
         EnvVars("APP_"),
     )
 

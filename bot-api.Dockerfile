@@ -76,7 +76,7 @@ RUN --mount=type=cache,target=/root/.cache \
 # will become mountpoint of our code
 WORKDIR /bot-api
 
-EXPOSE 8000
+EXPOSE 8080
 CMD ["uvicorn", "--reload", "main:app"]
 
 

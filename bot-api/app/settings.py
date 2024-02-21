@@ -15,6 +15,9 @@ from config.env import EnvVars
 from config.user import UserSettings
 from config.yaml import YAMLFile
 from pydantic import BaseModel
+from os import getcwd
+
+print(getcwd())
 
 
 class APIInfo(BaseModel):
@@ -34,7 +37,7 @@ class Settings(BaseModel):
 def default_configuration_builder() -> ConfigurationBuilder:
     app_env = get_env()
     builder = ConfigurationBuilder(
-        YAMLFile("settings.yaml"),
+        YAMLFile(f"{getcwd()}/bot-api/settings.yaml"),
         YAMLFile(f"settings.{app_env.lower()}.yaml", optional=True),
         EnvVars("APP_"),
     )

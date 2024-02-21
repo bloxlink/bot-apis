@@ -11,7 +11,7 @@ MODULES = (
 
 
 async def main():
-    load_modules(*MODULES, starting_path="./relay-server/")
+    load_modules(*MODULES, starting_path="./")
 
     async with bloxlink as bot:
         await bot.start(CONFIG.DISCORD_TOKEN)

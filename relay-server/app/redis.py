@@ -131,5 +131,7 @@ async def run():
             logging.error(f"Redis connection error: {e}")
             await asyncio.sleep(5)
 
+        await asyncio.sleep(0.1)
+
 
 create_task_log_exception(run())

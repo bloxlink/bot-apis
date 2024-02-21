@@ -80,7 +80,10 @@ def discover_endpoints():
     """Discovers all endpoints in the endpoints directory."""
 
     discovered_endpoints: list[RelayEndpoint] = []
-    endpoint_modules = load_modules("app/endpoints", starting_path="./")
+    try:
+        endpoint_modules = load_modules("app/endpoints", starting_path="./")
+    except FileNotFoundError: # TODO: this is needed for poetry runs but needs to be fixed
+        endpoint_modules = load_modules("app/endpoints", starting_path="./relay-server/")
 
     for endpoint_module in endpoint_modules:
         for endpoint_class_name in filter(

@@ -12,11 +12,10 @@ app = Application()
 
 
 @get("/")
-async def index():
-    """Health check route."""
+async def root():
+    """Returns a 200 OK when the webserver is live"""
 
-    return json({"message": "Relay server is running!"})
-
+    return "The Bloxlink webserver is alive & responding."
 
 async def main():
     """Starts the server."""
@@ -25,4 +24,7 @@ async def main():
     server = uvicorn.Server(config)
     await server.serve()
 
-create_task_log_exception(main())
+try:
+    create_task_log_exception(main())
+except KeyboardInterrupt:
+    raise

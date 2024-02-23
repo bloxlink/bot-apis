@@ -204,7 +204,7 @@ sentry-sdk = "^1.40.5"
 type = "git"
 url = "https://github.com/bloxlink/bloxlink-lib"
 reference = "HEAD"
-resolved_reference = "52a842d642b778573626c5302f560e4057e4d75c"
+resolved_reference = "7272e9679b8a31fefbe04698ac1e8b319c06f9c9"
 
 [[package]]
 name = "certifi"

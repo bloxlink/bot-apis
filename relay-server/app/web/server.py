@@ -25,7 +25,5 @@ async def main():
     server = uvicorn.Server(config)
     await server.serve()
 
-try:
-    create_task_log_exception(main())
-except KeyboardInterrupt:
-    raise
+
+create_task_log_exception(main())

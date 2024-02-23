@@ -14,7 +14,7 @@ class Config(BLOXLINK_CONFIG):
     PLAYING_STATUS: str = "/invite | blox.link"
     SHARD_COUNT: int = 1
     SHARDS_PER_NODE: int = 1
-    BOT_RELEASE: Literal["LOCAL", "MAIN", "PRO"] = "LOCAL"
+    BOT_RELEASE: Literal["LOCAL", "CANARY", "MAIN", "PRO"] = "LOCAL"
     HTTP_BOT_API: str
     HTTP_BOT_AUTH: str
 

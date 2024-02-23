@@ -10,6 +10,7 @@ from app.errors import configure_error_handlers
 # from app.services import configure_services
 from app.config import CONFIG
 from dotenv import load_dotenv
+from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
 # def configure_application(
 #     services: Container,
@@ -37,6 +38,8 @@ def configure_application() -> Application:
     app = Application(
         show_error_details=CONFIG.ENV == "dev"
     )
+
+    app = SentryAsgiMiddleware(app)
 
     return app
 

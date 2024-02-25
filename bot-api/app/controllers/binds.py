@@ -6,7 +6,7 @@ from typing import Optional
 
 from blacksheep.server.controllers import Controller, post
 from blacksheep import FromJSON
-from bloxlink_lib import RobloxUser, MemberSerializable, RoleSerializable, BaseModel, parse_template
+from bloxlink_lib import RobloxUser, MemberSerializable, RoleSerializable, BaseModel, parse_template, SnowflakeSet
 from bloxlink_lib.database import fetch_guild_data
 from ..models import Response
 from ..lib.binds import filter_binds
@@ -69,10 +69,10 @@ class BindsController(Controller):
         )
 
         if not guild_data.allowOldRoles:
-            bound_roles["removeRoles"] = list(map(int, remove_roles))
+            bound_roles["removeRoles"] = list(remove_roles)
 
-        bound_roles["addRoles"] = [int(role_id) for bind in potential_binds for role_id in bind.roles]
-        bound_roles["missingRoles"] = missing_roles
+        bound_roles["addRoles"] = list(SnowflakeSet([role_id for bind in potential_binds for role_id in bind.roles]))
+        bound_roles["missingRoles"] = list(missing_roles)
         bound_roles["nickname"] = nickname
 
         print(bound_roles)

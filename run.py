@@ -33,8 +33,8 @@ for app_name, app_run_command in APPS.items():
     process = subprocess.Popen(
         app_run_command,
         shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
         universal_newlines=True
     )
     processes[app_name] = process
@@ -45,18 +45,7 @@ while processes:
         return_code = process.poll()
 
         if return_code is not None:
-            stdout, stderr = process.communicate()
-
-            if return_code != 0:
-                print(f"Error occurred in {app_name}:")
-
-                if stdout:
-                    print(f"Output: {stdout}")
-
-                if stderr:
-                    print(stderr)
-            else:
-                print(f"{app_name} completed successfully.")
+            print(f"{GREEN_START}{app_name} completed successfully.{COLOR_END}")
 
             del processes[app_name]
 

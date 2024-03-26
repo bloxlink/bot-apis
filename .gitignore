@@ -160,3 +160,4 @@ cython_debug/
 .DS_Store
 src/apps/discord-gateway-relay/src/config.py
 src/apps/bot-api/src/config.py
+archive/

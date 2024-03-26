@@ -14,7 +14,7 @@ MODULES = (
 async def main():
     try:
         load_modules(*MODULES, starting_path="./")
-    except FileNotFoundError: # TODO: this is needed for poetry runs but needs to be fixed
+    except FileNotFoundError: # TODO: this is needed for poetry local development but should be improved
         load_modules(*MODULES, starting_path="./relay-server/")
 
     async with bloxlink as bot:

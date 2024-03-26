@@ -3,9 +3,9 @@ import signal
 import sys
 
 APPS = {
-    "roblox-info-server": "python3.10 src/main.py",
-    # "bot-api": "poetry run python src/main.py",
-    # "discord-gateway-relay": "python3.10 src/main.py"
+    "roblox-info-server": "cd src/apps/roblox-info-server; python3.10 src/main.py",
+    "bot-api": "poetry run python bot-api",
+    "discord-gateway-relay": "poetry run python relay-server"
 }
 
 # ANSI escape codes for colors
@@ -31,7 +31,7 @@ signal.signal(signal.SIGINT, terminate_processes)
 for app_name, app_run_command in APPS.items():
     print(f"{GREEN_START}Starting {app_name}...{COLOR_END}")
     process = subprocess.Popen(
-        f"cd src/apps/{app_name}; {app_run_command}",
+        app_run_command,
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -49,8 +49,12 @@ while processes:
 
             if return_code != 0:
                 print(f"Error occurred in {app_name}:")
-                print(f"Standard Output: {stdout}")
-                print(f"Standard Error: {stderr}")
+
+                if stdout:
+                    print(f"Output: {stdout}")
+
+                if stderr:
+                    print(stderr)
             else:
                 print(f"{app_name} completed successfully.")
 

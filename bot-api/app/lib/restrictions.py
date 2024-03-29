@@ -1,19 +1,28 @@
-from typing import TypedDict
-from bloxlink_lib import RobloxUser
+from typing import Any, Annotated
+from pydantic import Field
+from bloxlink_lib import RobloxUser, BaseModel
 from bloxlink_lib.database import fetch_guild_data
 
 
-class RestrictedDict(TypedDict):
-    """A dict to represent a restricted user."""
+class RestrictedData(BaseModel):
+    """Data of the restriction."""
 
-    unevaluated: list
-    is_restricted: bool
-    reason: str
-    action: str
-    source: str
+    unevaluated: Annotated[list, Field(default_factory=list)]
+    is_restricted: bool = False
+    reason: str | None = None
+    action: str | None = "kick"
+    source: str | None = None
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.reason or self.source:
+            self.is_restricted = True
+
+        if self.is_restricted and not self.action:
+            self.action = "kick"
 
 
-async def calculate_restrictions(guild_id: int, roblox_user: RobloxUser) -> RestrictedDict:
+
+async def calculate_restrictions(guild_id: int, roblox_user: RobloxUser) -> RestrictedData:
     """Check the restrictions in the guild against this roblox_user.
 
     This does not check for banEvaders or alt accounts. It will, however, include
@@ -39,19 +48,13 @@ async def calculate_restrictions(guild_id: int, roblox_user: RobloxUser) -> Rest
     """
 
 
-    restricted = RestrictedDict(
-        unevaluated=[],
-        is_restricted=False,
-        reason=None,
-        action=None,
-        source=None,
-    )
+    restricted = RestrictedData()
 
     guild_data = await fetch_guild_data(
         guild_id,
-        "ageLimit",
+        "ageLimit",#
         "disallowAlts",
-        "disallowBanEvaders",
+        "disallowBanEvaders",#
         "groupLock",
     )
 
@@ -64,23 +67,15 @@ async def calculate_restrictions(guild_id: int, roblox_user: RobloxUser) -> Rest
 
     if guild_data.ageLimit:
         if not roblox_user:
-            restricted.is_restricted = True
             restricted.reason = "User is not verified with Bloxlink."
-            restricted.action = "kick"
             restricted.source = "ageLimit"
 
             return restricted
 
-        age = roblox_user.get("age_days", 0)
-
-        if age < guild_data.ageLimit:
-            roblox_name = roblox_user["name"]
-
-            restricted.is_restricted = True
+        if roblox_user.age_days < guild_data.ageLimit:
             # fmt:skip
-            restricted.reason = f"User's account ({roblox_name}) age is less than" \
+            restricted.reason = f"User's account ({roblox_user.username}) age is less than" \
                 f"{guild_data.ageLimit} days old."
-            restricted.action = "kick"
             restricted.source = "ageLimit"
 
             return restricted
@@ -91,35 +86,33 @@ async def calculate_restrictions(guild_id: int, roblox_user: RobloxUser) -> Rest
                 g.get("unverifiedAction", "kick") == "kick" for g in guild_data.groupLock.values()
             )
 
-            restricted.is_restricted = True
             restricted.reason = "User is not verified with Bloxlink."
-            restricted.action = "kick" if kick_unverified else "dm"
+            restricted.action = "kick" if kick_unverified else None
             restricted.source = "groupLock"
 
             return restricted
 
         for group_id, group_data in guild_data.groupLock.items():
-            roblox_name = roblox_user["name"]
-
-            action = group_data.get("verifiedAction", "dm")
+            group_lock_action = group_data.get("verifiedAction", "dm")
             required_rolesets = group_data.get("roleSets")
-
             dm_message = group_data.get("dmMessage") or ""
+
             if dm_message:
                 dm_message = f"\n\n**The following text is from the server admins:**" \
                     f"\n>{dm_message} "
 
             group_match = roblox_user.get("groupsv2", {}).get(group_id)
-            if group_match is None:
-                restricted.is_restricted = True
-                restricted.reason = f"User ({roblox_name}) is not in the group " \
-                    f"{group_id}.{dm_message}"
-                restricted.action = action
+
+            if not group_match:
+                restricted.reason = f"User ({roblox_user.username}) is not in the group " \
+                    f"{group_id}{dm_message}"
+                restricted.action = group_lock_action
                 restricted.source = "groupLock"
 
                 return restricted
 
             user_roleset = group_match["role"].get("rank")
+
             for roleset in required_rolesets:
                 if isinstance(roleset, list):
                     # within range
@@ -131,11 +124,10 @@ async def calculate_restrictions(guild_id: int, roblox_user: RobloxUser) -> Rest
                         break
             else:
                 # no match was found - restrict the user.
-                restricted.is_restricted = True
                 # fmt:skip
-                restricted.reason = f"User ({roblox_name}) is not the required rank in the group " \
+                restricted.reason = f"User ({roblox_user.username}) does not have the required rank in the group " \
                     f"{group_id}.{dm_message}"
-                restricted.action = action
+                restricted.action = group_lock_action
                 restricted.source = "groupLock"
 
                 return restricted

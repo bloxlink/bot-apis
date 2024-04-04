@@ -18,7 +18,7 @@ else:
 
 if __name__ == "__main__":
     os.environ["APP_ENV"] = "dev"
-    port = int(os.environ.get("APP_PORT", 44778))
+    port = int(os.environ.get("PORT", 44778))
 
     console = Console()
     console.rule("[bold yellow]Running for local development", align="left")

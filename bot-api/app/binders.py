@@ -3,10 +3,14 @@ This module contains definitions of custom binders, used to bind request input
 parameters into instances of objects, injected to request handlers.
 """
 from blacksheep import FromHeader, Request
-from blacksheep.server.bindings import Binder
+from blacksheep.server.bindings import Binder, BoundValue
 
 from domain.common import PageOptions
 
+
+class FromListQuery(BoundValue[list | None]):
+    """Parses a comma-separated list of values from a query parameter"""
+    pass
 
 class IfNoneMatchHeader(FromHeader[str | None]):
     name = "If-None-Match"
@@ -39,3 +43,14 @@ class PageOptionsBinder(Binder):
         if continuation_id is not None:
             continuation_id = int(continuation_id[0])
         return PageOptions(page=page, limit=limit, continuation_id=continuation_id)
+
+
+class ListBinder(Binder):
+    """
+    Binds a comma-separated list of values from a query parameter.
+    """
+
+    handle = FromListQuery
+
+    async def get_value(self, request: Request) -> list | None:
+        return request.query.get(self.parameter_name)[0].split(",")

@@ -1,11 +1,15 @@
 import subprocess
 import signal
 import sys
+import os
 
 APPS = {
-    "roblox-info-server": "cd src/apps/roblox-info-server; python3.10 src/main.py",
-    "bot-api": "poetry run python bot-api",
-    "discord-gateway-relay": "poetry run python relay-server"
+    "bot-api": ("poetry run python bot-api", {
+        "PORT": "8000"
+    }),
+    "discord-gateway-relay": ("poetry run python relay-server", {
+        "PORT": "8001"
+    })
 }
 
 # ANSI escape codes for colors
@@ -28,14 +32,15 @@ def terminate_processes(signal, frame):
 signal.signal(signal.SIGINT, terminate_processes)
 
 # Start all apps
-for app_name, app_run_command in APPS.items():
+for app_name, app_data in APPS.items():
     print(f"{GREEN_START}Starting {app_name}...{COLOR_END}")
     process = subprocess.Popen(
-        app_run_command,
+        app_data[0],
         shell=True,
         stdout=sys.stdout,
         stderr=sys.stderr,
-        universal_newlines=True
+        universal_newlines=True,
+        env=dict(os.environ, **(app_data[1] or {}))
     )
     processes[app_name] = process
 

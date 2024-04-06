@@ -161,3 +161,4 @@ cython_debug/
 src/apps/discord-gateway-relay/src/config.py
 src/apps/bot-api/src/config.py
 archive/
+poetry.lock

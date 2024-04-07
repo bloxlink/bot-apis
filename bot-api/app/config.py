@@ -12,7 +12,6 @@ class Config(BLOXLINK_CONFIG):
 
     #############################
     ENV: Literal["dev", "prod"] = "prod"
-    ROBLOX_INFO_SERVER: str
 
 CONFIG: Config = Config(
     **{field:value for field, value in environ.items() if field in Config.model_fields}

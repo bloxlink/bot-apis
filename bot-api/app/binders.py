@@ -53,4 +53,4 @@ class ListBinder(Binder):
     handle = FromListQuery
 
     async def get_value(self, request: Request) -> list | None:
-        return request.query.get(self.parameter_name)[0].split(",")
+        return request.query.get(self.parameter_name, [""])[0].split(",")

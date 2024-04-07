@@ -76,4 +76,4 @@ class UserInfoController(Controller):
             for key, value in task.result().items():
                 setattr(roblox_data, key, value)
 
-        return roblox_data.model_dump(by_alias=True)
+        return roblox_data.model_dump(by_alias=True, exclude_unset=True)

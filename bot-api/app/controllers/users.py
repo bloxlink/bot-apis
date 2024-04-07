@@ -7,7 +7,7 @@ from typing import Optional, Literal, Coroutine
 
 from blacksheep.server.controllers import Controller, get
 from blacksheep import FromQuery
-from bloxlink_lib import RobloxUser, fetch_roblox_id, fetch_base_data #, use_groups, use_badges
+from bloxlink_lib import RobloxUser, fetch_roblox_id, fetch_base_data, fetch_user_groups, fetch_user_avatars #, use_badges
 from ..models import Response
 from ..binders import FromListQuery
 
@@ -24,23 +24,20 @@ class UserInfoController(Controller):
     @classmethod
     def class_name(cls) -> str:
         return "Roblox User Info Endpoints"
-    
-    @get("/test")
-    async def test(self) -> Response:
-        return Response(success=True)
 
     @get("/")
     async def retrieve_user_info(self, 
                                  username: FromQuery[str] = None,
                                  id: FromQuery[int] = None,
                                  include: FromListQuery = None,
-                                 timeout: FromQuery[float] = None
+                                 timeout: FromQuery[float] = None,
+                                 resolve_avatars: FromQuery[bool] = False,
                                  ) -> UserDataResponse | Response:
         """Retrieves the information of the Roblox user."""
 
         roblox_name: str = username.value if username else None
         roblox_id: int = id.value if id else None
-        include: list[str] = include.value if include else None
+        include: list[str] = include.value if include else ["everything"]
         timeout: float = timeout.value if timeout else None
 
         roblox_data: RobloxUser = None
@@ -55,17 +52,17 @@ class UserInfoController(Controller):
             if not roblox_id:
                 return Response(success=False, error="No Roblox user found")
         
-        roblox_data = RobloxUser(username=roblox_name, 
-                                 id=roblox_id, 
+        roblox_data = RobloxUser(username=roblox_name,
+                                 id=roblox_id,
                                  profile_link=f"https://www.roblox.com/users/{roblox_id}/profile")
         
         http_tasks: list[Coroutine] = [
             fetch_base_data(roblox_id),
-            # use_avatars()
+            fetch_user_avatars(roblox_id, resolve_avatars)
         ]
 
-        # if "groups" in include or "everything" in include:
-        #     http_tasks.append(use_groups())
+        if "groups" in include or "everything" in include:
+            http_tasks.append(fetch_user_groups(roblox_id))
 
         # if "badges" in include or "everything" in include:
         #     http_tasks.append(use_badges())
@@ -78,5 +75,5 @@ class UserInfoController(Controller):
 
             for key, value in task.result().items():
                 setattr(roblox_data, key, value)
-
+        
         return UserDataResponse(success=True, user=roblox_data.model_dump(by_alias=True))

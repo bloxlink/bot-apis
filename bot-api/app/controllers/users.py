@@ -7,7 +7,7 @@ from typing import Optional, Literal, Coroutine
 
 from blacksheep.server.controllers import Controller, get
 from blacksheep import FromQuery
-from bloxlink_lib import RobloxUser, fetch_roblox_id, fetch_base_data, fetch_user_groups, fetch_user_avatars #, use_badges
+from bloxlink_lib import RobloxUser, fetch_roblox_id, fetch_base_data, fetch_user_groups, fetch_user_avatars, fetch_user_badges
 from ..models import Response
 from ..binders import FromListQuery
 
@@ -64,8 +64,8 @@ class UserInfoController(Controller):
         if "groups" in include or "everything" in include:
             http_tasks.append(fetch_user_groups(roblox_id))
 
-        # if "badges" in include or "everything" in include:
-        #     http_tasks.append(use_badges())
+        if "badges" in include or "everything" in include:
+            http_tasks.append(fetch_user_badges(roblox_id))
 
         done, _ = await asyncio.wait([asyncio.create_task(task) for task in http_tasks], timeout=timeout)
 

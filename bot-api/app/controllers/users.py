@@ -3,7 +3,7 @@ Endpoint for user related endpoints
 """
 
 import asyncio
-from typing import Optional, Literal, Coroutine
+from typing import Optional, Coroutine
 
 from blacksheep.server.controllers import Controller, get
 from blacksheep import FromQuery
@@ -32,7 +32,7 @@ class UserInfoController(Controller):
                                  include: FromListQuery = None,
                                  timeout: FromQuery[float] = None,
                                  resolve_avatars: FromQuery[bool] = False,
-                                 ) -> UserDataResponse | Response:
+                                 ) -> RobloxUser | Response:
         """Retrieves the information of the Roblox user."""
 
         roblox_name: str = username.value if username else None
@@ -75,5 +75,5 @@ class UserInfoController(Controller):
 
             for key, value in task.result().items():
                 setattr(roblox_data, key, value)
-        
-        return UserDataResponse(success=True, user=roblox_data.model_dump(by_alias=True))
+
+        return roblox_data.model_dump(by_alias=True)

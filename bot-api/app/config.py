@@ -10,8 +10,10 @@ __all__ = ("CONFIG",)
 class Config(BLOXLINK_CONFIG):
     """Type definition for config values."""
 
-    #############################
     ENV: Literal["dev", "prod"] = "prod"
+    #############################
+    BOT_API: str
+    BOT_API_AUTH: str
 
 CONFIG: Config = Config(
     **{field:value for field, value in environ.items() if field in Config.model_fields}

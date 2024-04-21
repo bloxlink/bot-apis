@@ -11,7 +11,7 @@ class Payload(BaseModel):
     """Payload for the verification endpoint."""
 
     user_id: int
-    guild_id: int
+    guild_ids: list[int]
 
 
 class Response(BaseModel):
@@ -32,29 +32,30 @@ class VerificationEndpoint(RelayEndpoint[Payload]):
 
     async def handle(self, request: RedisRelayRequest[Payload]) -> Response:
         payload = request.payload
-        guild_id = payload.guild_id
+        guild_ids = payload.guild_ids
         user_id = payload.user_id
 
         print("new request")
 
-        guild = bloxlink.get_guild(guild_id)
+        for guild_id in guild_ids: # TODO: probably unnecessary to handle from relay server. might be better for API -> http bot directly.
+            guild = bloxlink.get_guild(guild_id)
 
-        if not guild:
-            return
+            if not guild:
+                continue
 
-        text, response = await fetch(
-            "POST",
-            f"{CONFIG.HTTP_BOT_API}/api/update/user",
-            headers={"Authorization": CONFIG.HTTP_BOT_AUTH},
-            body={
-                "guild_id": guild.id,
-                "member_id": user_id
-            },
-            raise_on_failure=False
-        )
+            text, response = await fetch(
+                "POST",
+                f"{CONFIG.HTTP_BOT_API}/api/update/user",
+                headers={"Authorization": CONFIG.HTTP_BOT_AUTH},
+                body={
+                    "guild_id": guild.id,
+                    "member_id": user_id
+                },
+                raise_on_failure=False
+            )
 
-        if response.status != StatusCodes.OK:
-            logging.error(f"Verification endpoint response: {response.status}, {text}")
+            if response.status != StatusCodes.OK:
+                logging.error(f"Verification endpoint response: {response.status}, {text}")
 
 
         return Response(success=response.status == StatusCodes.OK)

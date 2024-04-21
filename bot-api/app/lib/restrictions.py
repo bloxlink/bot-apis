@@ -87,7 +87,7 @@ async def calculate_restrictions(guild_id: int, roblox_user: RobloxUser) -> Rest
     if guild_data.groupLock:
         if not roblox_user:
             kick_unverified = any(
-                g.get("unverifiedAction", "kick") == "kick" for g in guild_data.groupLock.values()
+                g.unverifiedAction == "kick" for g in guild_data.groupLock.values()
             )
 
             return RestrictedData(
@@ -98,10 +98,10 @@ async def calculate_restrictions(guild_id: int, roblox_user: RobloxUser) -> Rest
                 unevaluated=unevaluated
             )
 
-        for group_id, group_data in guild_data.groupLock.items():
-            group_lock_action = group_data.get("verifiedAction", "dm")
-            required_rolesets = group_data.get("roleSets")
-            dm_message = group_data.get("dmMessage") or ""
+        for group_id, group_lock in guild_data.groupLock.items():
+            group_lock_action = group_lock.verifiedAction
+            required_rolesets = group_lock.roleSets
+            dm_message = group_lock.dmMessage or ""
 
             if dm_message:
                 dm_message = f"\n\n**The following text is from the server admins:**" \
@@ -113,7 +113,7 @@ async def calculate_restrictions(guild_id: int, roblox_user: RobloxUser) -> Rest
                 return RestrictedData(
                     reason=f"User ({roblox_user.username}) is not in the group " \
                         f"{group_id}{dm_message}",
-                    reason_suffix=f"this server requires users to be in [{group_data.get("groupName")}](<https://www.roblox.com/groups/{group_id}>)",
+                    reason_suffix=f"this server requires users to be in [{group_lock.groupName}](<https://www.roblox.com/groups/{group_id}>)",
                     action=group_lock_action,
                     source="groupLock",
                     unevaluated=unevaluated
@@ -137,7 +137,7 @@ async def calculate_restrictions(guild_id: int, roblox_user: RobloxUser) -> Rest
                     return RestrictedData(
                         reason=f"User ({roblox_user.username}) does not have the required rank in the group " \
                             f"{group_id}.{dm_message}",
-                        reason_suffix=f"this server requires users have rank **{roleset} or higher** in [{group_data.get("groupName")}](<https://www.roblox.com/groups/{group_id}>)",
+                        reason_suffix=f"this server requires users have rank **{roleset} or higher** in [{group_lock.groupName}](<https://www.roblox.com/groups/{group_id}>)",
                         action=group_lock_action,
                         source="groupLock",
                         unevaluated=unevaluated

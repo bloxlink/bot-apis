@@ -123,6 +123,7 @@ async def run():
 
             if message:
                 parsed_message = RedisMessage(**message)
+                print(parsed_message)
 
                 if parsed_message.type == "message":
                     create_task_log_exception(handle_message(parsed_message.channel, RedisMessageData(**json.loads(parsed_message.data))))

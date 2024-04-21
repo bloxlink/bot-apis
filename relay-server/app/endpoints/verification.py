@@ -35,6 +35,8 @@ class VerificationEndpoint(RelayEndpoint[Payload]):
         guild_id = payload.guild_id
         user_id = payload.user_id
 
+        print("new request")
+
         guild = bloxlink.get_guild(guild_id)
 
         if not guild:

@@ -38,10 +38,12 @@ class VerificationEndpoint(RelayEndpoint[Payload]):
         print("new request")
 
         for guild_id in guild_ids: # TODO: probably unnecessary to handle from relay server. might be better for API -> http bot directly.
-            guild = bloxlink.get_guild(guild_id)
+            guild = bloxlink.get_guild(int(guild_id))
 
             if not guild:
                 continue
+
+            print("has guild")
 
             text, response = await fetch(
                 "POST",

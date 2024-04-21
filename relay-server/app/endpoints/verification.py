@@ -49,7 +49,8 @@ class VerificationEndpoint(RelayEndpoint[Payload]):
                 headers={"Authorization": CONFIG.HTTP_BOT_AUTH},
                 body={
                     "guild_id": guild.id,
-                    "member_id": user_id
+                    "member_id": user_id,
+                    "dm_user": False
                 },
                 raise_on_failure=False
             )

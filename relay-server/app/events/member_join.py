@@ -5,6 +5,7 @@ from discord import Member
 from app.bloxlink import bloxlink
 from app.config import CONFIG
 
+
 @bloxlink.event
 async def on_member_join(member: Member):
     """Event for when a member joins a guild."""

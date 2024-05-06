@@ -4,13 +4,10 @@ from pydantic import Field
 from bloxlink_lib import fetch_typed, BaseModel, StatusCodes
 from bloxlink_lib.database import update_guild_data
 from app.bloxlink import bloxlink
+from app.types import PremiumResponse
 from app.config import CONFIG
 
-class PremiumResponse(BaseModel):
-    """Response from the premium guild check bot endpoint."""
 
-    premium: bool = False
-    features: list = Field(default_factory=list)
 
 @bloxlink.event
 async def on_guild_join(guild: discord.Guild):

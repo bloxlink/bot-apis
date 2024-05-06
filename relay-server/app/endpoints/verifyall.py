@@ -9,13 +9,8 @@ from ..config import CONFIG
 from ..base import RelayEndpoint
 from ..redis import RedisRelayRequest
 from ..bloxlink import bloxlink
+from ..types import Response
 
-
-class Response(BaseModel):
-    """Response from the stats command."""
-
-    success: bool
-    nonce: str
 
 class Payload(BaseModel):
     guild_id: int

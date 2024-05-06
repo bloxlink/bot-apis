@@ -4,6 +4,7 @@ from ..base import RelayEndpoint
 from ..config import CONFIG
 from ..redis import RedisRelayRequest
 from ..bloxlink import bloxlink
+from ..types import Response
 
 
 
@@ -12,12 +13,6 @@ class Payload(BaseModel):
 
     user_id: int
     guild_ids: list[int]
-
-
-class Response(BaseModel):
-    """Response from the verification endpoint."""
-
-    success: bool
 
 
 class VerificationEndpoint(RelayEndpoint[Payload]):

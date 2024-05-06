@@ -7,12 +7,6 @@ RELAY_ENDPOINTS: list['RelayEndpoint'] = []
 T = TypeVar("T", bound=BaseModel | dict)
 
 
-class Response(BaseModel):
-    """A response from each node."""
-
-    success: bool
-    error: str | None
-
 
 class RelayPath(list[str]):
     """A path for an endpoint."""

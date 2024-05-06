@@ -3,6 +3,7 @@ from pydantic import Field
 from discord import ChannelType, TextChannel
 from bloxlink_lib import BaseModel
 from ..base import RelayEndpoint
+from ..types import Response
 from ..redis import RedisRelayRequest
 from ..bloxlink import bloxlink
 
@@ -38,11 +39,8 @@ class ChannelData(BaseModel):
     position: int
     type: Literal[ChannelType.category, ChannelType.text]
 
-class Response(BaseModel):
+class EndpointResponse(Response):
     """Response from the cache lookup endpoint."""
-
-    success: bool
-    nonce: str
 
     result: GuildData | list[RoleData] | list[ChannelData]
 
@@ -50,7 +48,6 @@ class Response(BaseModel):
 class Payload(BaseModel):
     guild_id: int = Field(alias="guildID")
     type: Literal["channels", "roles", "guild"]
-
 
 
 class CacheLookupEndpoint(RelayEndpoint[Payload]):

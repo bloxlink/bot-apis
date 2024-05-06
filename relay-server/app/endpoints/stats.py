@@ -4,9 +4,10 @@ from bloxlink_lib import get_node_id, BaseModel
 from ..base import RelayEndpoint
 from ..redis import RedisRelayRequest
 from ..bloxlink import bloxlink
+from ..types import Response
 
 
-class StatsResponse(BaseModel):
+class StatsResponse(Response):
     """Response from the stats command."""
 
     node_id: int

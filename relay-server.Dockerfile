@@ -76,7 +76,7 @@ RUN --mount=type=cache,target=/root/.cache \
 # will become mountpoint of our code
 WORKDIR /relay-server
 
-EXPOSE 8080
+EXPOSE 8020
 CMD ["python", "__main__.py"]
 
 

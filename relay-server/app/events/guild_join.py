@@ -1,7 +1,6 @@
 import logging
 import discord
-from pydantic import Field
-from bloxlink_lib import fetch_typed, BaseModel, StatusCodes
+from bloxlink_lib import fetch_typed, StatusCodes
 from bloxlink_lib.database import update_guild_data
 from app.bloxlink import bloxlink
 from app.types import PremiumResponse

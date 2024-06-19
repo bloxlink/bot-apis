@@ -13,11 +13,15 @@ from ..types import Response
 
 
 class Payload(BaseModel):
+    """Payload for verifyall endpoint"""
+
     guild_id: int
     channel_id: int
     chunk_limit: int
 
 class VerifyAllProgress(BaseModel):
+    """Progress of the /verifyall scan"""
+    
     started_at: datetime
     ended_at: datetime | None = None
     members_processed: int
@@ -73,7 +77,7 @@ class VerifyAllEndpoint(RelayEndpoint[Payload]):
 
                 text, response = await fetch(
                     "POST",
-                    f"{CONFIG.HTTP_BOT_API}/api/update/users",
+                    f"{CONFIG.HTTP_BOT_API}/api/users/update",
                     headers={"Authorization": CONFIG.HTTP_BOT_AUTH},
                     body={
                         "guild_id": guild.id,

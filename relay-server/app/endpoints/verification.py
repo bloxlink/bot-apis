@@ -30,8 +30,6 @@ class VerificationEndpoint(RelayEndpoint[Payload]):
         guild_ids = payload.guild_ids
         user_id = payload.user_id
 
-        print("new request")
-
         for guild_id in guild_ids: # TODO: probably unnecessary to handle from relay server. might be better for API -> http bot directly.
             guild = bloxlink.get_guild(guild_id)
 
@@ -40,7 +38,7 @@ class VerificationEndpoint(RelayEndpoint[Payload]):
 
             text, response = await fetch(
                 "POST",
-                f"{CONFIG.HTTP_BOT_API}/api/update/user",
+                f"{CONFIG.HTTP_BOT_API}/api/users/{user_id}/update",
                 headers={"Authorization": CONFIG.HTTP_BOT_AUTH},
                 body={
                     "guild_id": guild.id,

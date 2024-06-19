@@ -35,9 +35,9 @@ from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 def configure_application() -> Application:
     load_dotenv()
 
-    app = Application(
-        show_error_details=CONFIG.ENV == "dev"
-    )
+    app = configure_authentication(Application(
+        show_error_details=CONFIG.ENVIRONMENT == "DEVELOPMENT"
+    ))
 
     app = SentryAsgiMiddleware(app)
 

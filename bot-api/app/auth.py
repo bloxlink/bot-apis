@@ -1,8 +1,26 @@
-from blacksheep import Application
+from typing import Callable, Awaitable
+from blacksheep import Application, Request, Response, unauthorized
+from app.config import CONFIG
 
 
-def configure_authentication():
-    """
-    Configure authentication as desired. For reference:
-    https://www.neoteroi.dev/blacksheep/authentication/
-    """
+UNAUTHORIZED_RESPONSE = unauthorized("You are not authorized to use this endpoint.")
+
+
+def configure_authentication(app: Application):
+    """Adds an authentication handler as a middleware to the application"""
+
+    async def authenticate(request: Request, handler: Callable[[Request], Awaitable[Response]]) -> Response:
+        auth_header: str | None = (
+            request.get_first_header(b"Authorization").decode()
+            if request.has_header(b"Authorization")
+            else None
+        )
+
+        if auth_header != CONFIG.BOT_API_AUTH:
+            return UNAUTHORIZED_RESPONSE
+
+        return await handler(request)
+
+    app.middlewares.append(authenticate)
+
+    return app

@@ -11,7 +11,6 @@ colorama==0.4.6 ; python_version >= "3.12" and python_version < "3.13" and (plat
 colorlog==6.8.2 ; python_version >= "3.12" and python_version < "3.13"
 deepmerge==1.1.1 ; python_version >= "3.12" and python_version < "3.13"
 discord-py==2.4.0 ; python_version >= "3.12" and python_version < "3.13"
-discord==2.3.2 ; python_version >= "3.12" and python_version < "3.13"
 dnspython==2.6.1 ; python_version >= "3.12" and python_version < "3.13"
 essentials-configuration==2.0.4 ; python_version >= "3.12" and python_version < "3.13"
 essentials-openapi==1.0.9 ; python_version >= "3.12" and python_version < "3.13"

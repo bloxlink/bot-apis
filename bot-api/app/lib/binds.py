@@ -1,10 +1,5 @@
-import re
 from bloxlink_lib import GuildBind, RobloxUser, MemberSerializable, RoleSerializable, get_binds, SnowflakeSet, CoerciveSet
 from bloxlink_lib.database import fetch_guild_data
-
-
-ARBITRARY_GROUP_TEMPLATE = re.compile(r"\{group-rank-(.*?)\}")
-NICKNAME_TEMPLATE_REGEX = re.compile(r"\{(.*?)\}")
 
 
 async def filter_binds(guild_id: int, roblox_user: RobloxUser | None, member: MemberSerializable, guild_roles: dict[int, RoleSerializable]) -> tuple[list[GuildBind], SnowflakeSet, CoerciveSet[str]]:

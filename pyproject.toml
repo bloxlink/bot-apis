@@ -18,7 +18,7 @@ rich = "^13.7.0"
 bloxlink-lib = {git = "https://github.com/bloxlink/bloxlink-lib"}
 attrs = "^23.2.0"
 python-dotenv = "^1.0.1"
-discord = "^2.4.0"
+discord-py = "2.4.0"
 gunicorn = "^21.2.0"
 hikari = "^2.0.0.dev126"
 

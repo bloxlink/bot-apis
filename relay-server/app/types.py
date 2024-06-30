@@ -7,7 +7,7 @@ class Response(BaseModel):
     """A response from each node."""
 
     nonce: str | None
-    result: Any
+    result: Any | None = None
     success: bool = None
     error: str | None = None
 

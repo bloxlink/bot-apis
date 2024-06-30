@@ -20,6 +20,7 @@ attrs = "^23.2.0"
 python-dotenv = "^1.0.1"
 discord = "^2.3.2"
 gunicorn = "^21.2.0"
+hikari = "^2.0.0.dev126"
 
 
 [build-system]

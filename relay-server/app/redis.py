@@ -3,7 +3,7 @@ import time
 import json
 import logging
 from typing import Optional, Literal, TypeVar, Generic
-from redis import ConnectionError
+from redis import exceptions as redis_exceptions
 
 from bloxlink_lib import find, BaseModel, parse_into, create_task_log_exception
 from bloxlink_lib.database import redis
@@ -97,7 +97,7 @@ async def handle_message(channel: str, message_data: RedisMessageData):
         logging.error(f"Endpoint execution: {channel} exceeded process time!")
     # TODO: Catch few types of redis exceptions
 
-    except redis.ConnectionError:
+    except redis_exceptions.ConnectionError:
         pass
 
     except Exception as ex: # pylint: disable=broad-except
@@ -128,7 +128,7 @@ async def run():
                 if parsed_message.type == "message":
                     create_task_log_exception(handle_message(parsed_message.channel, RedisMessageData(**json.loads(parsed_message.data))))
 
-        except ConnectionError as e:
+        except redis_exceptions.ConnectionError as e:
             logging.error(f"Redis connection error: {e}")
             await asyncio.sleep(5)
 

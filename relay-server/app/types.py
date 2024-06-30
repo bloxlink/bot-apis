@@ -8,8 +8,8 @@ class Response(BaseModel):
 
     nonce: str | None
     result: Any
-    success: bool
-    error: str | None
+    success: bool = None
+    error: str | None = None
 
 
 class PremiumResponse(BaseModel):

@@ -1,4 +1,4 @@
-from bloxlink_lib import GuildBind, RobloxUser, MemberSerializable, RoleSerializable, get_binds, SnowflakeSet, CoerciveSet
+from bloxlink_lib import GuildBind, RobloxUser, MemberSerializable, RoleSerializable, get_binds, SnowflakeSet, CoerciveSet, find
 from bloxlink_lib.database import fetch_guild_data
 
 
@@ -11,6 +11,7 @@ async def filter_binds(guild_id: int, roblox_user: RobloxUser | None, member: Me
 
     guild_data = await fetch_guild_data(guild_id, "verifiedRoleEnabled", "unverifiedRoleEnabled")
     binds = await get_binds(guild_id, guild_roles=guild_roles)
+
     verified_role_enabled = guild_data.verifiedRoleEnabled
     unverified_role_enabled = guild_data.unverifiedRoleEnabled
 
@@ -34,9 +35,9 @@ async def filter_binds(guild_id: int, roblox_user: RobloxUser | None, member: Me
                     remove_roles.add(role_id)
 
     # create any missing verified/unverified roles
-    if roblox_user and verified_role_enabled and not any(b.type == "verified" for b in binds):
+    if roblox_user and verified_role_enabled and not find(lambda b: b.type == "verified", binds):
         missing_roles.add("Verified")
-    elif not roblox_user and unverified_role_enabled and not any(b.type == "unverified" for b in binds):
+    elif not roblox_user and unverified_role_enabled and not find(lambda b: b.type == "unverified", binds):
         missing_roles.add("Unverified")
 
     return successful_binds, remove_roles, missing_roles

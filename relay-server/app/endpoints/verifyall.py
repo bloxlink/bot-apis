@@ -45,7 +45,7 @@ async def record_progress(nonce: str, progress: int, total: int, current_chunk: 
         }
 
     parsed_progress = parse_into(current_progress, VerifyAllProgress)
-    parsed_progress.members_processed = progress + parsed_progress.members_processed
+    parsed_progress.members_processed = progress + parsed_progress.members_processed if progress + parsed_progress.members_processed < total else total # TODO: investigate actual bug
     parsed_progress.current_chunk = current_chunk
     parsed_progress.total_chunks = total_chunks
 

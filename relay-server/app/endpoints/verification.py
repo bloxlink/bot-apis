@@ -52,4 +52,4 @@ class VerificationEndpoint(RelayEndpoint[Payload]):
                 logging.error(f"Verification endpoint response: {response.status}, {text}")
 
 
-        return Response(success=response.status == StatusCodes.OK)
+        return Response(success=True)

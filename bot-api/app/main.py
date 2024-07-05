@@ -11,6 +11,7 @@ from app.errors import configure_error_handlers
 from app.config import CONFIG
 from dotenv import load_dotenv
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
+from bloxlink_lib import get_environment, Environment
 
 # def configure_application(
 #     services: Container,
@@ -36,7 +37,7 @@ def configure_application() -> Application:
     load_dotenv()
 
     app = configure_authentication(Application(
-        show_error_details=CONFIG.ENVIRONMENT == "DEVELOPMENT"
+        show_error_details=get_environment() == Environment.LOCAL
     ))
 
     app = SentryAsgiMiddleware(app)

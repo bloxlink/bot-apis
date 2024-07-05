@@ -15,7 +15,7 @@ async def on_member_join(member: Member):
     if (guild_data.autoRoles or guild_data.autoVerification) and not guild_data.highTrafficServer:
         json_response, response = await fetch(
             "POST",
-            f"{CONFIG.HTTP_BOT_API}/api/users/{member.guild.id}/{member.id}/join",
+            f"{CONFIG.HTTP_BOT_API}/api/users/{member.id}/{member.guild.id}/join",
             headers={"Authorization": CONFIG.HTTP_BOT_AUTH},
             body={
                 "member": MemberSerializable.from_discordpy(member).model_dump()
